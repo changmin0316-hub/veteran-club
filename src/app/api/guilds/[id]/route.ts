@@ -1,0 +1,39 @@
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { prisma } from "@/lib/db";
+import { requireManager, AuthError } from "@/lib/guard";
+
+export const dynamic = "force-dynamic";
+
+function handleAuth(e: unknown) {
+  if (e instanceof AuthError)
+    return NextResponse.json({ message: e.message }, { status: e.status });
+  throw e;
+}
+
+const schema = z.object({
+  order: z.number().int().positive().optional(),
+  name: z.string().trim().min(1).max(50).optional(),
+});
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await requireManager();
+  } catch (e) {
+    return handleAuth(e);
+  }
+  const { id } = await params;
+  const body = await req.json().catch(() => null);
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ message: "입력값을 확인하세요." }, { status: 400 });
+  }
+  const guild = await prisma.guild.update({
+    where: { id: Number(id) },
+    data: parsed.data,
+  });
+  return NextResponse.json({ guild });
+}

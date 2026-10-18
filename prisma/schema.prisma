@@ -1,0 +1,188 @@
+// VETERAN CLUB - 길드 아이템 분배/출석/정산 관리
+// 개발: SQLite. 운영 전환 시 provider = "postgresql" 로 변경 후 마이그레이션.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  // 개발: sqlite / 운영: postgresql 로 변경 후 `npx prisma migrate deploy`(또는 db push).
+  // 스키마는 두 DB 모두와 호환되는 타입만 사용(String/Int/Boolean/DateTime).
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// 군(단) - 1군 베테랑1, 2군 베테랑2, 3군 ...
+model Guild {
+  id        Int      @id @default(autoincrement())
+  order     Int      @unique // 군 번호 (1, 2, 3)
+  name      String // 표시명 (베테랑1)
+  createdAt DateTime @default(now())
+
+  members Member[]
+}
+
+/// 길드원(캐릭터). 로그인 아이디 = 캐릭터명(name).
+model Member {
+  id           Int      @id @default(autoincrement())
+  name         String   @unique // 캐릭터명 (로그인 ID)
+  passwordHash String
+  job          String? // 직업 (엘리멘탈리스트 등)
+  role         String   @default("MEMBER") // ADMIN | COMMANDER | MEMBER
+  attack       Int      @default(0)
+  defense      Int      @default(0)
+  accuracy     Int      @default(0)
+  legendSkill  Boolean  @default(false) // 전설스킬 유무
+  myth1        Int      @default(0) // 신화성의
+  myth2        Int      @default(0) // 신화사역마
+  bossKills    String   @default("{}") // 보스 처치 현황 JSON (명예의전당)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  guildId Int?
+  guild   Guild? @relation(fields: [guildId], references: [id])
+
+  bids        Bid[]
+  attendances AttendanceRecord[]
+  exclusions   SettlementExclusion[]
+  wonItems     EventItem[]           @relation("ItemWinner")
+  monthlyStats MonthlyStat[]
+
+  @@index([guildId])
+}
+
+/// 주차(시즌)
+model Week {
+  id           Int      @id @default(autoincrement())
+  number       Int      @unique // 15
+  name         String? // 표시명
+  excludeRatio Int      @default(0) // 결산 제외금(힐비) 비율 %
+  diamond      Int      @default(0) // 길드 정산금(다이아 총액) - 분배 재원
+  createdAt    DateTime @default(now())
+
+  events      Event[]
+  attendances AttendanceRecord[]
+  exclusions  SettlementExclusion[]
+}
+
+/// 주차별 분배 제외 대상
+model SettlementExclusion {
+  id       Int @id @default(autoincrement())
+  weekId   Int
+  memberId Int
+
+  week   Week   @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([weekId, memberId])
+  @@index([weekId])
+}
+
+/// 월별 스탯 스냅샷 (매월 1일 기준, 전월 대비 증감 계산용). ym = "YYYY-MM"
+model MonthlyStat {
+  id        Int      @id @default(autoincrement())
+  memberId  Int
+  ym        String
+  attack    Int
+  defense   Int
+  accuracy  Int
+  createdAt DateTime @default(now())
+
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([memberId, ym])
+  @@index([memberId])
+}
+
+/// 보스 몬스터 (명예의전당 - 길드원 처치 현황 열)
+model BossMonster {
+  id        Int      @id @default(autoincrement())
+  name      String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+/// 출석 카테고리 (고대성채(5), 쟁탈전(5) ...). weight = 가중 점수.
+model AttendanceCategory {
+  id        Int      @id @default(autoincrement())
+  name      String
+  weight    Int      @default(0)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  records AttendanceRecord[]
+}
+
+/// 출석 기록: 주차 x 길드원 x 카테고리 별 횟수
+model AttendanceRecord {
+  id         Int @id @default(autoincrement())
+  weekId     Int
+  memberId   Int
+  categoryId Int
+  count      Int @default(0)
+
+  week     Week               @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  member   Member             @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  category AttendanceCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([weekId, memberId, categoryId])
+  @@index([weekId])
+  @@index([memberId])
+}
+
+/// 분배 이벤트 (1017 마레호노르5)
+model Event {
+  id        Int      @id @default(autoincrement())
+  name      String
+  active    Boolean  @default(true)
+  weekId    Int?
+  createdAt DateTime @default(now())
+
+  week  Week?       @relation(fields: [weekId], references: [id])
+  items EventItem[]
+
+  @@index([weekId])
+}
+
+/// 아이템 마스터 (825개). rarity = 등급(일반 등), category = 무기/방어구/장신구
+model Item {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  rarity    String   @default("일반")
+  category  String   @default("무기")
+  basePrice Int      @default(0)
+  createdAt DateTime @default(now())
+
+  eventItems EventItem[]
+}
+
+/// 이벤트에 등록된 입찰 대상 아이템 (공용입찰 목록)
+model EventItem {
+  id       Int  @id @default(autoincrement())
+  eventId  Int
+  itemId   Int
+  winnerId Int? // 낙찰자(길드원)
+
+  event  Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  item   Item    @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  winner Member? @relation("ItemWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+  bids   Bid[]
+
+  @@index([eventId])
+  @@index([itemId])
+}
+
+/// 입찰/신청
+model Bid {
+  id          Int      @id @default(autoincrement())
+  eventItemId Int
+  memberId    Int
+  amount      Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  eventItem EventItem @relation(fields: [eventItemId], references: [id], onDelete: Cascade)
+  member    Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([eventItemId, memberId])
+  @@index([memberId])
+}

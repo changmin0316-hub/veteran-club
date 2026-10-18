@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+:root {
+  --vc-yellow: #ffb600;
+  --vc-bg: #0b0b0d;
+  --vc-panel: #15161a;
+  --vc-border: #26272e;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  background: #f5f6f8;
+  color: #1a1a1a;
+  font-family:
+    "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 로그인 화면 전용 다크 배경 */
+body.login-bg {
+  background: #000;
+}
