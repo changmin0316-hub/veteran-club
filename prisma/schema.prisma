@@ -6,10 +6,11 @@ generator client {
 }
 
 datasource db {
-  // 운영: postgresql. 로컬에서 SQLite로 개발하려면 provider를 "sqlite"로,
-  // DATABASE_URL을 file:./dev.db로 바꾸면 됩니다(스키마는 두 DB 모두 호환).
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // 운영: postgresql (Neon). 런타임은 풀링 URL, 마이그레이션/db push는 직접 연결 URL 사용.
+  // 로컬 SQLite 개발 시 provider를 "sqlite", url을 file:./dev.db로 바꾸고 directUrl 줄 제거.
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 /// 군(단) - 1군 베테랑1, 2군 베테랑2, 3군 ...
