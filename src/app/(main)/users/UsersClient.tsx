@@ -323,7 +323,7 @@ export default function UsersClient({
       )}
 
       <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
-        <table className="w-full min-w-[820px] text-sm">
+        <table className="w-full min-w-[960px] text-sm">
           <thead>
             <tr className="border-b border-neutral-200 bg-neutral-50 text-neutral-600">
               <th className="sticky left-0 z-20 w-10 bg-neutral-50 px-3 py-2.5">
@@ -376,16 +376,16 @@ export default function UsersClient({
                   <td className="sticky left-10 z-10 bg-white px-3 py-2 font-medium">
                     {r.name}
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-2 py-2">
                     <input
                       value={r.job}
                       disabled={!editable}
                       onChange={(e) => patch(r.id, { job: e.target.value })}
-                      className={cellInput}
+                      className={`${cellInput} w-24`}
                       placeholder="직업"
                     />
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-2 py-2">
                     <select
                       value={r.guildId ?? ""}
                       disabled={!editable}
@@ -394,12 +394,17 @@ export default function UsersClient({
                           guildId: e.target.value ? Number(e.target.value) : null,
                         })
                       }
-                      className={cellInput}
+                      className={`${cellInput} w-20`}
+                      title={
+                        guilds.find((g) => g.id === r.guildId)
+                          ? `${guilds.find((g) => g.id === r.guildId)!.order}군 - ${guilds.find((g) => g.id === r.guildId)!.name}`
+                          : "미지정"
+                      }
                     >
                       <option value="">미지정</option>
                       {guilds.map((g) => (
                         <option key={g.id} value={g.id}>
-                          {g.order}군 - {g.name}
+                          {g.order}군
                         </option>
                       ))}
                     </select>
@@ -455,7 +460,7 @@ export default function UsersClient({
                       onChange={(e) =>
                         patch(r.id, { role: e.target.value as RoleValue })
                       }
-                      className={cellInput}
+                      className={`${cellInput} w-20`}
                     >
                       <option value="MEMBER">{ROLE_LABEL.MEMBER}</option>
                       <option value="COMMANDER">{ROLE_LABEL.COMMANDER}</option>
@@ -751,13 +756,13 @@ function NumCell({
   onChange: (v: number) => void;
 }) {
   return (
-    <td className="px-3 py-2">
+    <td className="px-2 py-2">
       <input
         type="number"
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(Number(e.target.value))}
-        className={`${cellInput} text-right`}
+        className="w-16 rounded border border-transparent bg-transparent px-1 py-1 text-right text-sm tabular-nums [appearance:textfield] hover:border-neutral-200 focus:border-sky-400 focus:bg-white focus:outline-none disabled:text-neutral-500 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
       <DeltaBadge value={delta} />
     </td>
@@ -811,7 +816,7 @@ function Field({
 }
 
 const cellInput =
-  "w-full rounded border border-transparent bg-transparent px-2 py-1 text-sm hover:border-neutral-200 focus:border-sky-400 focus:bg-white focus:outline-none disabled:text-neutral-400";
+  "rounded border border-transparent bg-transparent px-2 py-1 text-sm hover:border-neutral-200 focus:border-sky-400 focus:bg-white focus:outline-none disabled:text-neutral-500";
 const modalInput =
   "w-full rounded border border-neutral-300 px-2.5 py-2 text-sm focus:border-sky-400 focus:outline-none";
 const btnGhost =
