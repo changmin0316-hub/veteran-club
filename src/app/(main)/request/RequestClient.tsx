@@ -19,6 +19,7 @@ interface Bidder {
   guildId: number | null;
   job: string | null;
   statTotal: number;
+  statDelta: number | null;
 }
 interface ResultItem {
   eventItemId: number;
@@ -224,8 +225,11 @@ export default function RequestClient({
                               <td className="px-3 py-1.5 text-neutral-500">
                                 {guildName(b.guildId)}
                               </td>
-                              <td className="px-3 py-1.5 text-right font-semibold">
-                                {b.statTotal.toLocaleString()}
+                              <td className="px-3 py-1.5 text-right">
+                                <span className="font-semibold">
+                                  {b.statTotal.toLocaleString()}
+                                </span>
+                                <DeltaBadge value={b.statDelta} />
                               </td>
                               <td className="px-3 py-1.5 text-right">
                                 {isWinner ? (
@@ -253,6 +257,23 @@ export default function RequestClient({
         </div>
       )}
     </section>
+  );
+}
+
+// 전월 대비 총합 증감 (▲빨강 상승 / ▼파랑 하락 / – 동일), 3대 옆 인라인 표시
+function DeltaBadge({ value }: { value: number | null }) {
+  if (value === null || value === undefined)
+    return <span className="ml-1.5 text-[11px] text-neutral-300">–</span>;
+  if (value === 0)
+    return <span className="ml-1.5 text-[11px] text-neutral-300">±0</span>;
+  const up = value > 0;
+  return (
+    <span
+      className={`ml-1.5 text-[11px] font-medium ${up ? "text-red-500" : "text-blue-500"}`}
+    >
+      {up ? "▲" : "▼"}
+      {Math.abs(value).toLocaleString()}
+    </span>
   );
 }
 

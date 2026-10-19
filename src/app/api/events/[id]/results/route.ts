@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireManager, AuthError } from "@/lib/guard";
+import { getStatDeltas } from "@/lib/stats";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,9 @@ export async function GET(
     },
   });
 
+  // 전월 대비 총합 증감
+  const deltaMap = await getStatDeltas();
+
   return NextResponse.json({
     items: items.map((ei) => ({
       eventItemId: ei.id,
@@ -57,6 +61,7 @@ export async function GET(
         guildId: b.member.guildId,
         job: b.member.job,
         statTotal: b.member.attack + b.member.defense + b.member.accuracy,
+        statDelta: deltaMap.get(b.member.id)?.total ?? null,
       })),
     })),
   });
