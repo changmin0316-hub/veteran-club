@@ -754,10 +754,10 @@ export default function AwardsClient({
                       <td className="px-3 py-2 font-medium">{m.name}</td>
                       <td className="px-3 py-2 text-neutral-500">{guildName(m.guildId)}</td>
                       <td className="px-3 py-2">
-                        <ItemChips items={m.donate} tone="sky" />
+                        <ItemChips items={m.donate} />
                       </td>
                       <td className="px-3 py-2">
-                        <ItemChips items={m.payout} tone="emerald" />
+                        <ItemChips items={m.payout} />
                       </td>
                     </tr>
                   ))}
@@ -773,25 +773,21 @@ export default function AwardsClient({
 
 function ItemChips({
   items,
-  tone,
 }: {
   items: { itemName: string; qty: number }[];
-  tone: "sky" | "emerald";
 }) {
   if (items.length === 0)
     return <span className="text-xs text-neutral-300">-</span>;
-  const qtyCls = tone === "sky" ? "text-sky-700" : "text-emerald-700";
+  // tone은 기부(파랑)/지급(초록) 구분 테두리 강조에만 사용, 칩 색은 아이템명별로 구분
   return (
     <div className="flex flex-wrap gap-1">
       {items.map((it) => (
         <span
           key={it.itemName}
-          className="inline-flex items-center gap-1 rounded bg-neutral-100 px-2 py-0.5 text-xs text-neutral-700"
+          className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium ring-1 ${occasionClass(it.itemName)}`}
         >
           <span>{it.itemName}</span>
-          <span className={`font-semibold tabular-nums ${qtyCls}`}>
-            {it.qty.toLocaleString()}개
-          </span>
+          <span className="font-bold tabular-nums">{it.qty.toLocaleString()}개</span>
         </span>
       ))}
     </div>
