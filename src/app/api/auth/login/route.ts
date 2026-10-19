@@ -51,8 +51,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const member = await prisma.member.findUnique({
-    where: { name: parsed.data.id },
+  // 대소문자 구분 없이 캐릭터명 조회 (예: VC원장 = vc원장)
+  const member = await prisma.member.findFirst({
+    where: { name: { equals: parsed.data.id, mode: "insensitive" } },
   });
 
   // 존재하지 않아도 동일한 응답/지연으로 사용자 열거 방지
