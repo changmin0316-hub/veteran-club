@@ -39,7 +39,7 @@ export async function PATCH(
   return NextResponse.json({ category });
 }
 
-// 삭제는 원장(ADMIN) 전용 (관련 출석 기록도 함께 삭제됨)
+// 삭제는 관리자(ADMIN) 전용 (관련 출석 기록도 함께 삭제됨)
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

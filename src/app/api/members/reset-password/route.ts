@@ -37,10 +37,10 @@ export async function POST(req: NextRequest) {
     select: { id: true, name: true, role: true },
   });
 
-  // 원장이 아니면 ADMIN 대상 초기화 불가
+  // 관리자이 아니면 ADMIN 대상 초기화 불가
   if (me.role !== "ADMIN" && targets.some((t) => t.role === "ADMIN")) {
     return NextResponse.json(
-      { message: "원장 계정의 비밀번호는 초기화할 수 없습니다." },
+      { message: "관리자 계정의 비밀번호는 초기화할 수 없습니다." },
       { status: 403 }
     );
   }

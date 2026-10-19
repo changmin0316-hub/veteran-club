@@ -57,10 +57,10 @@ export async function POST(req: NextRequest) {
   }
   const data = parsed.data;
 
-  // ADMIN 권한 부여는 원장만 가능
+  // ADMIN 권한 부여는 관리자만 가능
   if (data.role === "ADMIN" && me.role !== "ADMIN") {
     return NextResponse.json(
-      { message: "원장 권한은 원장만 부여할 수 있습니다." },
+      { message: "관리자 권한은 관리자만 부여할 수 있습니다." },
       { status: 403 }
     );
   }

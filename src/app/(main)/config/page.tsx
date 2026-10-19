@@ -1,11 +1,11 @@
 import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/session";
 import ConfigClient from "./ConfigClient";
+import { requireManagerPage } from "@/lib/page-guard";
 
 export const dynamic = "force-dynamic";
 
 export default async function ConfigPage() {
-  const me = await getCurrentUser();
+  const me = await requireManagerPage();
   const [weeks, categories, guilds, bosses] = await Promise.all([
     prisma.week.findMany({ orderBy: { number: "desc" } }),
     prisma.attendanceCategory.findMany({ orderBy: { sortOrder: "asc" } }),

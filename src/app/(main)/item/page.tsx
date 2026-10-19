@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/db";
 import ItemClient, { type ItemRow } from "./ItemClient";
+import { requireManagerPage } from "@/lib/page-guard";
 
 export const dynamic = "force-dynamic";
 
 export default async function ItemPage() {
+  await requireManagerPage();
   const [items, total] = await Promise.all([
     prisma.item.findMany({ orderBy: { name: "asc" }, take: 50 }),
     prisma.item.count(),

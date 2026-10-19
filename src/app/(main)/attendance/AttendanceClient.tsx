@@ -11,9 +11,13 @@ type Edits = Record<string, number>; // `${memberId}:${categoryId}` -> count
 export default function AttendanceClient({
   weeks,
   guilds,
+  isManager,
+  myName,
 }: {
   weeks: WeekOpt[];
   guilds: GuildOpt[];
+  isManager: boolean;
+  myName: string | null;
 }) {
   const router = useRouter();
   const { weekId, setWeekId, guildId, setGuildId, data, loading, error, reload } =
@@ -72,6 +76,7 @@ export default function AttendanceClient({
   }
 
   const dirtyCount = Object.keys(edits).length;
+  const baseCols = isManager ? 5 : 3; // 캐릭명·출석율·적용횟수(+분배율·분배금)
 
   return (
     <section>
@@ -80,21 +85,25 @@ export default function AttendanceClient({
           <WeekSelect weeks={weeks} weekId={weekId} onChange={setWeekId} />
         </div>
         <div className="flex-1" />
-        <button
-          onClick={() =>
-            router.push(`/attendance/new${guildId ? `?squad=${guildId}` : ""}`)
-          }
-          className="rounded border border-sky-300 bg-white px-4 py-2 text-sm font-medium text-sky-700 hover:bg-sky-50"
-        >
-          출석등록
-        </button>
-        <button
-          onClick={save}
-          disabled={busy || dirtyCount === 0}
-          className="rounded bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-50"
-        >
-          출석 저장{dirtyCount > 0 ? ` (${dirtyCount})` : ""}
-        </button>
+        {isManager && (
+          <>
+            <button
+              onClick={() =>
+                router.push(`/attendance/new${guildId ? `?squad=${guildId}` : ""}`)
+              }
+              className="rounded border border-sky-300 bg-white px-4 py-2 text-sm font-medium text-sky-700 hover:bg-sky-50"
+            >
+              출석등록
+            </button>
+            <button
+              onClick={save}
+              disabled={busy || dirtyCount === 0}
+              className="rounded bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-50"
+            >
+              출석 저장{dirtyCount > 0 ? ` (${dirtyCount})` : ""}
+            </button>
+          </>
+        )}
       </div>
 
       <div className="mb-3">
@@ -118,8 +127,12 @@ export default function AttendanceClient({
             <tr className="border-b border-neutral-200 bg-neutral-50 text-neutral-600">
               <th className="px-3 py-2.5 text-left font-semibold">캐릭명</th>
               <th className="px-3 py-2.5 text-left font-semibold">출석율</th>
-              <th className="px-3 py-2.5 text-right font-semibold">분배율</th>
-              <th className="px-3 py-2.5 text-right font-semibold">분배금</th>
+              {isManager && (
+                <>
+                  <th className="px-3 py-2.5 text-right font-semibold">분배율</th>
+                  <th className="px-3 py-2.5 text-right font-semibold">분배금</th>
+                </>
+              )}
               <th className="px-3 py-2.5 text-right font-semibold">적용횟수</th>
               {data?.categories.map((c) => (
                 <th key={c.id} className="px-2 py-2.5 text-center font-semibold">
@@ -131,19 +144,32 @@ export default function AttendanceClient({
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={5 + (data?.categories.length ?? 0)} className="py-8 text-center text-neutral-400">
+                <td colSpan={baseCols + (data?.categories.length ?? 0)} className="py-8 text-center text-neutral-400">
                   불러오는 중...
                 </td>
               </tr>
             )}
             {!loading &&
-              data?.rows.map((r) => (
+              data?.rows.map((r) => {
+                const mine = myName != null && r.name === myName;
+                return (
                 <tr
                   key={r.memberId}
-                  className={`border-b border-neutral-50 ${r.excluded ? "bg-neutral-50 text-neutral-400" : ""}`}
+                  className={`border-b border-neutral-50 ${
+                    mine
+                      ? "bg-sky-50"
+                      : r.excluded
+                        ? "bg-neutral-50 text-neutral-400"
+                        : ""
+                  }`}
                 >
                   <td className="px-3 py-2 font-medium">
                     {r.name}
+                    {mine && (
+                      <span className="ml-1 rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-medium text-sky-700">
+                        나
+                      </span>
+                    )}
                     {r.excluded && (
                       <span className="ml-1 text-xs text-red-400">(제외)</span>
                     )}
@@ -156,38 +182,49 @@ export default function AttendanceClient({
                           style={{ width: `${Math.round(r.attendanceRate * 100)}%` }}
                         />
                       </div>
-                      <span className="text-xs text-neutral-400">
+                      <span className="text-xs text-neutral-500">
                         {(r.attendanceRate * 100).toFixed(0)}%
                       </span>
                     </div>
                   </td>
-                  <td className="px-3 py-2 text-right text-neutral-500">
-                    {(r.shareRatio * 100).toFixed(2)}%
-                  </td>
-                  <td className="px-3 py-2 text-right font-semibold">
-                    {r.share.toLocaleString()}
-                  </td>
+                  {isManager && (
+                    <>
+                      <td className="px-3 py-2 text-right text-neutral-500">
+                        {(r.shareRatio * 100).toFixed(2)}%
+                      </td>
+                      <td className="px-3 py-2 text-right font-semibold">
+                        {r.share.toLocaleString()}
+                      </td>
+                    </>
+                  )}
                   <td className="px-3 py-2 text-right text-neutral-500">
                     {r.applied}
                   </td>
                   {data.categories.map((c) => (
                     <td key={c.id} className="px-2 py-1.5 text-center">
-                      <input
-                        type="number"
-                        min={0}
-                        value={cellValue(r.memberId, c.id)}
-                        onChange={(e) =>
-                          setCell(r.memberId, c.id, Number(e.target.value))
-                        }
-                        className="w-14 rounded border border-transparent bg-transparent px-1 py-1 text-center hover:border-neutral-200 focus:border-sky-400 focus:bg-white focus:outline-none"
-                      />
+                      {isManager ? (
+                        <input
+                          type="number"
+                          min={0}
+                          value={cellValue(r.memberId, c.id)}
+                          onChange={(e) =>
+                            setCell(r.memberId, c.id, Number(e.target.value))
+                          }
+                          className="w-14 rounded border border-transparent bg-transparent px-1 py-1 text-center hover:border-neutral-200 focus:border-sky-400 focus:bg-white focus:outline-none"
+                        />
+                      ) : (
+                        <span className="text-neutral-700">
+                          {r.counts[c.id] ?? 0}
+                        </span>
+                      )}
                     </td>
                   ))}
                 </tr>
-              ))}
+                );
+              })}
             {!loading && data && data.rows.length === 0 && (
               <tr>
-                <td colSpan={5 + data.categories.length} className="py-8 text-center text-neutral-400">
+                <td colSpan={baseCols + data.categories.length} className="py-8 text-center text-neutral-400">
                   해당 군에 길드원이 없습니다.
                 </td>
               </tr>
@@ -197,8 +234,9 @@ export default function AttendanceClient({
       </div>
 
       <p className="mt-2 text-xs text-neutral-400">
-        출석 점수 = Σ(횟수 × 카테고리 가중치) · 분배율 = 내 점수 / 제외 제외한 전체 점수 ·
-        분배금은 [분배금 정산]의 다이아 재원과 [결산]의 힐비 비율을 반영합니다.
+        {isManager
+          ? "출석 점수 = Σ(횟수 × 카테고리 가중치) · 분배율 = 내 점수 / 제외 제외한 전체 점수 · 분배금은 [분배금 정산]의 다이아 재원과 [결산]의 힐비 비율을 반영합니다."
+          : "출석율은 최고 출석자 대비 비율입니다. 파란 '나' 표시가 본인 행입니다."}
       </p>
 
     </section>

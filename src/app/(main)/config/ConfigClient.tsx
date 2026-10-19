@@ -501,7 +501,7 @@ function CategoryRow({
           <button
             onClick={() => setConfirming(true)}
             className="px-1 text-neutral-300 hover:text-red-500"
-            title="삭제(원장)"
+            title="삭제(관리자)"
           >
             ✕
           </button>

@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/db";
 import EventClient, { type EventRow, type WeekOpt } from "./EventClient";
+import { requireManagerPage } from "@/lib/page-guard";
 
 export const dynamic = "force-dynamic";
 
 export default async function EventPage() {
+  await requireManagerPage();
   const [events, weeks] = await Promise.all([
     prisma.event.findMany({
       orderBy: { createdAt: "desc" },

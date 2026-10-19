@@ -51,17 +51,17 @@ export async function PATCH(
   }
   const data = parsed.data;
 
-  // 원장이 아니면: ADMIN 대상 수정 불가, ADMIN 권한 부여 불가
+  // 관리자이 아니면: ADMIN 대상 수정 불가, ADMIN 권한 부여 불가
   if (me.role !== "ADMIN") {
     if (target.role === "ADMIN") {
       return NextResponse.json(
-        { message: "원장 계정은 원장만 수정할 수 있습니다." },
+        { message: "관리자 계정은 관리자만 수정할 수 있습니다." },
         { status: 403 }
       );
     }
     if (data.role === "ADMIN") {
       return NextResponse.json(
-        { message: "원장 권한은 원장만 부여할 수 있습니다." },
+        { message: "관리자 권한은 관리자만 부여할 수 있습니다." },
         { status: 403 }
       );
     }
@@ -104,7 +104,7 @@ export async function DELETE(
   }
   if (target.role === "ADMIN" && me.role !== "ADMIN") {
     return NextResponse.json(
-      { message: "원장 계정은 삭제할 수 없습니다." },
+      { message: "관리자 계정은 삭제할 수 없습니다." },
       { status: 403 }
     );
   }

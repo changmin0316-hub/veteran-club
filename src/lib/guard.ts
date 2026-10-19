@@ -17,7 +17,7 @@ export async function requireUser() {
   return user;
 }
 
-/** 관리 권한(사단장 이상) 필수. */
+/** 관리 권한(운영진 이상) 필수. */
 export async function requireManager() {
   const user = await requireUser();
   if (RANK[user.role] < RANK["COMMANDER"]) {
@@ -26,10 +26,10 @@ export async function requireManager() {
   return user;
 }
 
-/** 원장(ADMIN) 전용. */
+/** 관리자(ADMIN) 전용. */
 export async function requireAdmin() {
   const user = await requireUser();
-  if (user.role !== "ADMIN") throw new AuthError("원장 권한이 필요합니다.", 403);
+  if (user.role !== "ADMIN") throw new AuthError("관리자 권한이 필요합니다.", 403);
   return user;
 }
 

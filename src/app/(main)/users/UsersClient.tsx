@@ -37,8 +37,8 @@ export interface StatDelta {
 export type StatDeltaMap = Record<number, StatDelta | null>;
 
 const ROLE_LABEL: Record<RoleValue, string> = {
-  ADMIN: "원장",
-  COMMANDER: "사단장",
+  ADMIN: "관리자",
+  COMMANDER: "운영진",
   MEMBER: "길드원",
 };
 
@@ -64,6 +64,7 @@ export default function UsersClient({
   myRole: RoleValue;
 }) {
   const isAdmin = myRole === "ADMIN";
+  const isManager = myRole === "ADMIN" || myRole === "COMMANDER";
 
   const [rows, setRows] = useState<MemberRow[]>(initialRows);
   const [original, setOriginal] = useState<Map<number, MemberRow>>(
@@ -266,16 +267,18 @@ export default function UsersClient({
         />
         <StatCard
           label="권한"
-          value={`원장 ${summary.byRole.ADMIN} · 사단장 ${summary.byRole.COMMANDER}`}
+          value={`관리자 ${summary.byRole.ADMIN} · 운영진 ${summary.byRole.COMMANDER}`}
           sub={`길드원 ${summary.byRole.MEMBER}명`}
         />
         <StatCard label="평균 3대" value={summary.avgTotal.toLocaleString()} tone="amber" />
       </div>
 
-      <p className="mb-3 rounded-lg bg-neutral-100 px-4 py-2.5 text-xs text-neutral-500">
-        체크박스 선택 후 <b className="text-neutral-700">비번초기화</b> · 값 수정 후{" "}
-        <b className="text-neutral-700">저장</b>. 스탯 옆 ▲빨강=상승 / ▼파랑=하락(전월 대비).
-      </p>
+      {isManager && (
+        <p className="mb-3 rounded-lg bg-neutral-100 px-4 py-2.5 text-xs text-neutral-500">
+          체크박스 선택 후 <b className="text-neutral-700">비번초기화</b> · 값 수정 후{" "}
+          <b className="text-neutral-700">저장</b>. 스탯 옆 ▲빨강=상승 / ▼파랑=하락(전월 대비).
+        </p>
+      )}
 
       {/* 필터 · 검색 · 액션 */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -299,21 +302,23 @@ export default function UsersClient({
           placeholder="캐릭명·직업 검색"
           className="ml-auto w-40 rounded border border-neutral-300 px-3 py-1.5 text-sm focus:border-sky-400 focus:outline-none"
         />
-        <div className="flex gap-1.5">
-          <button onClick={resetPasswords} disabled={busy} className={btnGhost}>
-            비번초기화
-          </button>
-          <button onClick={() => setShowAdd(true)} disabled={busy} className={btnGhost}>
-            등록
-          </button>
-          <button
-            onClick={saveAll}
-            disabled={busy || dirtyIds.length === 0}
-            className={btnPrimary}
-          >
-            저장{dirtyIds.length > 0 ? ` (${dirtyIds.length})` : ""}
-          </button>
-        </div>
+        {isManager && (
+          <div className="flex gap-1.5">
+            <button onClick={resetPasswords} disabled={busy} className={btnGhost}>
+              비번초기화
+            </button>
+            <button onClick={() => setShowAdd(true)} disabled={busy} className={btnGhost}>
+              등록
+            </button>
+            <button
+              onClick={saveAll}
+              disabled={busy || dirtyIds.length === 0}
+              className={btnPrimary}
+            >
+              저장{dirtyIds.length > 0 ? ` (${dirtyIds.length})` : ""}
+            </button>
+          </div>
+        )}
       </div>
 
       {msg && (
@@ -323,107 +328,127 @@ export default function UsersClient({
       )}
 
       <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
-        <table className="w-full min-w-[960px] text-sm">
+        <table className="w-full text-sm" style={{ minWidth: isManager ? 960 : 560 }}>
           <thead>
             <tr className="border-b border-neutral-200 bg-neutral-50 text-neutral-600">
-              <th className="sticky left-0 z-20 w-10 bg-neutral-50 px-3 py-2.5">
-                <input
-                  type="checkbox"
-                  checked={
-                    visible.length > 0 &&
-                    visible.every((v) => selected.has(v.id))
-                  }
-                  onChange={toggleAll}
-                />
-              </th>
-              <th className="sticky left-10 z-20 bg-neutral-50 px-3 py-2.5 text-left font-semibold">
+              {isManager && (
+                <th className="sticky left-0 z-20 w-10 bg-neutral-50 px-3 py-2.5">
+                  <input
+                    type="checkbox"
+                    checked={
+                      visible.length > 0 && visible.every((v) => selected.has(v.id))
+                    }
+                    onChange={toggleAll}
+                  />
+                </th>
+              )}
+              <th
+                className={`sticky z-20 bg-neutral-50 px-3 py-2.5 text-left font-semibold ${isManager ? "left-10" : "left-0"}`}
+              >
                 캐릭명
               </th>
               <Th>직업</Th>
               <Th>소속</Th>
               {bosses.map((b) => (
-                <th
-                  key={b.id}
-                  className="whitespace-nowrap px-2 py-2.5 text-center text-xs font-semibold"
-                  title={b.name}
-                >
-                  {b.name}
+                <th key={b.id} className="px-1 py-2 align-bottom">
+                  <div className="mx-auto flex h-24 w-6 items-end justify-center">
+                    <span
+                      className="whitespace-nowrap text-[11px] font-semibold leading-none [writing-mode:vertical-rl] rotate-180"
+                      title={b.name}
+                    >
+                      {b.name}
+                    </span>
+                  </div>
                 </th>
               ))}
-              <Th right>공격</Th>
-              <Th right>방어</Th>
-              <Th right>명중</Th>
-              <Th right>총합</Th>
-              <Th>권한</Th>
-              <th className="w-12 px-3 py-2.5" />
+              {isManager && (
+                <>
+                  <Th right>공격</Th>
+                  <Th right>방어</Th>
+                  <Th right>명중</Th>
+                  <Th right>총합</Th>
+                  <Th>권한</Th>
+                  <th className="w-12 px-3 py-2.5" />
+                </>
+              )}
             </tr>
           </thead>
           <tbody>
             {visible.map((r) => {
               const editable = canEditRow(r);
+              const g = guilds.find((x) => x.id === r.guildId);
               return (
-                <tr
-                  key={r.id}
-                  className="border-b border-neutral-50 hover:bg-neutral-50"
-                >
-                  <td className="sticky left-0 z-10 bg-white px-3 py-2 text-center">
-                    <input
-                      type="checkbox"
-                      checked={selected.has(r.id)}
-                      onChange={() => toggle(r.id)}
-                    />
-                  </td>
-                  <td className="sticky left-10 z-10 bg-white px-3 py-2 font-medium">
+                <tr key={r.id} className="border-b border-neutral-50 hover:bg-neutral-50">
+                  {isManager && (
+                    <td className="sticky left-0 z-10 bg-white px-3 py-2 text-center">
+                      <input
+                        type="checkbox"
+                        checked={selected.has(r.id)}
+                        onChange={() => toggle(r.id)}
+                      />
+                    </td>
+                  )}
+                  <td
+                    className={`sticky z-10 bg-white px-3 py-2 font-medium ${isManager ? "left-10" : "left-0"}`}
+                  >
                     {r.name}
                   </td>
                   <td className="px-2 py-2">
-                    <input
-                      value={r.job}
-                      disabled={!editable}
-                      onChange={(e) => patch(r.id, { job: e.target.value })}
-                      className={`${cellInput} w-24`}
-                      placeholder="직업"
-                    />
+                    {isManager ? (
+                      <input
+                        value={r.job}
+                        disabled={!editable}
+                        onChange={(e) => patch(r.id, { job: e.target.value })}
+                        className={`${cellInput} w-24`}
+                        placeholder="직업"
+                      />
+                    ) : (
+                      <span className="text-neutral-700">{r.job || "-"}</span>
+                    )}
                   </td>
                   <td className="px-2 py-2">
-                    <select
-                      value={r.guildId ?? ""}
-                      disabled={!editable}
-                      onChange={(e) =>
-                        patch(r.id, {
-                          guildId: e.target.value ? Number(e.target.value) : null,
-                        })
-                      }
-                      className={`${cellInput} w-20`}
-                      title={
-                        guilds.find((g) => g.id === r.guildId)
-                          ? `${guilds.find((g) => g.id === r.guildId)!.order}군 - ${guilds.find((g) => g.id === r.guildId)!.name}`
-                          : "미지정"
-                      }
-                    >
-                      <option value="">미지정</option>
-                      {guilds.map((g) => (
-                        <option key={g.id} value={g.id}>
-                          {g.order}군
-                        </option>
-                      ))}
-                    </select>
+                    {isManager ? (
+                      <select
+                        value={r.guildId ?? ""}
+                        disabled={!editable}
+                        onChange={(e) =>
+                          patch(r.id, {
+                            guildId: e.target.value ? Number(e.target.value) : null,
+                          })
+                        }
+                        className={`${cellInput} w-20`}
+                        title={g ? `${g.order}군 - ${g.name}` : "미지정"}
+                      >
+                        <option value="">미지정</option>
+                        {guilds.map((gg) => (
+                          <option key={gg.id} value={gg.id}>
+                            {gg.order}군
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className="text-neutral-700">
+                        {g ? `${g.order}군 - ${g.name}` : "-"}
+                      </span>
+                    )}
                   </td>
                   {bosses.map((b) => {
                     const on = !!r.bossKills[b.id];
                     return (
-                      <td key={b.id} className="px-2 py-2 text-center">
+                      <td key={b.id} className="px-1 py-2 text-center">
                         <button
                           type="button"
-                          disabled={!editable}
+                          disabled={!isManager || !editable}
                           onClick={() => toggleBoss(r.id, b.id)}
                           title={`${b.name} · ${on ? "처치" : "미처치"}`}
                           className={[
-                            "h-7 w-9 rounded text-sm font-bold transition",
+                            "h-6 w-7 rounded text-xs font-bold",
                             on
                               ? "bg-emerald-500 text-white"
                               : "border border-neutral-300 bg-white text-neutral-400",
-                            editable ? "hover:opacity-80" : "cursor-default",
+                            isManager && editable
+                              ? "transition hover:opacity-80"
+                              : "cursor-default",
                           ].join(" ")}
                         >
                           {on ? "✓" : "✕"}
@@ -431,62 +456,71 @@ export default function UsersClient({
                       </td>
                     );
                   })}
-                  <NumCell
-                    value={r.attack}
-                    delta={deltas[r.id]?.attack}
-                    disabled={!editable}
-                    onChange={(v) => patch(r.id, { attack: v })}
-                  />
-                  <NumCell
-                    value={r.defense}
-                    delta={deltas[r.id]?.defense}
-                    disabled={!editable}
-                    onChange={(v) => patch(r.id, { defense: v })}
-                  />
-                  <NumCell
-                    value={r.accuracy}
-                    delta={deltas[r.id]?.accuracy}
-                    disabled={!editable}
-                    onChange={(v) => patch(r.id, { accuracy: v })}
-                  />
-                  <td className="px-3 py-2 text-right font-semibold">
-                    <div>{(r.attack + r.defense + r.accuracy).toLocaleString()}</div>
-                    <DeltaBadge value={deltas[r.id]?.total} />
-                  </td>
-                  <td className="px-3 py-2">
-                    <select
-                      value={r.role}
-                      disabled={!editable}
-                      onChange={(e) =>
-                        patch(r.id, { role: e.target.value as RoleValue })
-                      }
-                      className={`${cellInput} w-20`}
-                    >
-                      <option value="MEMBER">{ROLE_LABEL.MEMBER}</option>
-                      <option value="COMMANDER">{ROLE_LABEL.COMMANDER}</option>
-                      {isAdmin && (
-                        <option value="ADMIN">{ROLE_LABEL.ADMIN}</option>
-                      )}
-                    </select>
-                  </td>
-                  <td className="px-3 py-2 text-center">
-                    {editable && (
-                      <button
-                        onClick={() => remove(r)}
-                        disabled={busy}
-                        title="삭제"
-                        className="text-neutral-300 hover:text-red-500"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </td>
+                  {isManager && (
+                    <>
+                      <NumCell
+                        value={r.attack}
+                        delta={deltas[r.id]?.attack}
+                        disabled={!editable}
+                        onChange={(v) => patch(r.id, { attack: v })}
+                      />
+                      <NumCell
+                        value={r.defense}
+                        delta={deltas[r.id]?.defense}
+                        disabled={!editable}
+                        onChange={(v) => patch(r.id, { defense: v })}
+                      />
+                      <NumCell
+                        value={r.accuracy}
+                        delta={deltas[r.id]?.accuracy}
+                        disabled={!editable}
+                        onChange={(v) => patch(r.id, { accuracy: v })}
+                      />
+                      <td className="px-3 py-2 text-right font-semibold">
+                        <div>
+                          {(r.attack + r.defense + r.accuracy).toLocaleString()}
+                        </div>
+                        <DeltaBadge value={deltas[r.id]?.total} />
+                      </td>
+                      <td className="px-3 py-2">
+                        <select
+                          value={r.role}
+                          disabled={!editable}
+                          onChange={(e) =>
+                            patch(r.id, { role: e.target.value as RoleValue })
+                          }
+                          className={`${cellInput} w-20`}
+                        >
+                          <option value="MEMBER">{ROLE_LABEL.MEMBER}</option>
+                          <option value="COMMANDER">{ROLE_LABEL.COMMANDER}</option>
+                          {isAdmin && (
+                            <option value="ADMIN">{ROLE_LABEL.ADMIN}</option>
+                          )}
+                        </select>
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        {editable && (
+                          <button
+                            onClick={() => remove(r)}
+                            disabled={busy}
+                            title="삭제"
+                            className="text-neutral-300 hover:text-red-500"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </td>
+                    </>
+                  )}
                 </tr>
               );
             })}
             {visible.length === 0 && (
               <tr>
-                <td colSpan={10 + bosses.length} className="py-8 text-center text-neutral-400">
+                <td
+                  colSpan={3 + bosses.length + (isManager ? 7 : 0)}
+                  className="py-8 text-center text-neutral-400"
+                >
                   해당 군에 길드원이 없습니다.
                 </td>
               </tr>
@@ -641,9 +675,9 @@ function AddMemberModal({
                   setForm({ ...form, role: e.target.value as RoleValue })
                 }
               >
-                <option value="MEMBER">길드원</option>
-                <option value="COMMANDER">사단장</option>
-                {isAdmin && <option value="ADMIN">원장</option>}
+                <option value="MEMBER">{ROLE_LABEL.MEMBER}</option>
+                <option value="COMMANDER">{ROLE_LABEL.COMMANDER}</option>
+                {isAdmin && <option value="ADMIN">{ROLE_LABEL.ADMIN}</option>}
               </select>
             </Field>
             <Field label="공격">

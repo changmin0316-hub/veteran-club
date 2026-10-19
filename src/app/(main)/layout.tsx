@@ -11,11 +11,13 @@ export default async function MainLayout({
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
+  const isManager = user.role === "ADMIN" || user.role === "COMMANDER";
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-5">
       <TopBar name={user.name} role={user.role} />
       <div className="mt-4">
-        <NavTabs />
+        <NavTabs isManager={isManager} />
       </div>
       <div className="mt-6">{children}</div>
     </div>

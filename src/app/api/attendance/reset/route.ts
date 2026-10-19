@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 const schema = z.object({ weekId: z.number().int().positive() });
 
-// 주차별 출석 기록 전체 삭제 (원장 전용, 되돌릴 수 없음)
+// 주차별 출석 기록 전체 삭제 (관리자 전용, 되돌릴 수 없음)
 export async function POST(req: NextRequest) {
   try {
     await requireAdmin();
