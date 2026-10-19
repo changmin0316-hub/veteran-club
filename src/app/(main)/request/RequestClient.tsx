@@ -32,9 +32,11 @@ interface ResultItem {
 export default function RequestClient({
   events,
   guilds,
+  isAdmin,
 }: {
   events: EventOpt[];
   guilds: GuildOpt[];
+  isAdmin: boolean;
 }) {
   const [eventId, setEventId] = useState<number | null>(
     events.find((e) => e.active)?.id ?? events[0]?.id ?? null
@@ -179,13 +181,15 @@ export default function RequestClient({
                       <span className="rounded bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700">
                         🏆 낙찰: {winner.name}
                       </span>
-                      <button
-                        onClick={() => award(it.eventItemId, null)}
-                        disabled={busy}
-                        className="text-xs text-neutral-400 hover:text-red-500"
-                      >
-                        취소
-                      </button>
+                      {isAdmin && (
+                        <button
+                          onClick={() => award(it.eventItemId, null)}
+                          disabled={busy}
+                          className="text-xs text-neutral-400 hover:text-red-500"
+                        >
+                          취소
+                        </button>
+                      )}
                     </span>
                   ) : (
                     <span className="text-xs text-neutral-400">미낙찰</span>
@@ -234,7 +238,7 @@ export default function RequestClient({
                               <td className="px-3 py-1.5 text-right">
                                 {isWinner ? (
                                   <span className="text-xs text-amber-600">낙찰됨</span>
-                                ) : (
+                                ) : isAdmin ? (
                                   <button
                                     onClick={() => award(it.eventItemId, b.memberId)}
                                     disabled={busy}
@@ -242,7 +246,7 @@ export default function RequestClient({
                                   >
                                     낙찰
                                   </button>
-                                )}
+                                ) : null}
                               </td>
                             </tr>
                           );
