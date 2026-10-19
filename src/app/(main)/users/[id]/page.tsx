@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireManagerPage } from "@/lib/page-guard";
+import { getCurrentUser } from "@/lib/session";
 import UserClient from "../../user/UserClient";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +12,7 @@ export default async function MemberEditPage({
   params: Promise<{ id: string }>;
 }) {
   await requireManagerPage();
+  const me = await getCurrentUser();
   const { id } = await params;
   const memberId = Number(id);
   if (!Number.isInteger(memberId)) notFound();
@@ -31,6 +33,7 @@ export default async function MemberEditPage({
   return (
     <UserClient
       targetMemberId={member.id}
+      canEditName={me?.role === "ADMIN"}
       profile={{
         name: member.name,
         job: member.job ?? "",

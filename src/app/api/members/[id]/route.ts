@@ -6,6 +6,7 @@ import { requireManager, AuthError } from "@/lib/guard";
 export const dynamic = "force-dynamic";
 
 const updateSchema = z.object({
+  name: z.string().trim().min(1, "캐릭터명을 입력하세요.").max(30).optional(),
   job: z.string().trim().max(50).optional().nullable(),
   role: z.enum(["ADMIN", "COMMANDER", "MEMBER"]).optional(),
   guildId: z.number().int().positive().nullable().optional(),
@@ -73,11 +74,34 @@ export async function PATCH(
     }
   }
 
-  const { bossKills, ...rest } = data;
+  // 캐릭터명(로그인 ID) 변경은 관리자만. 중복 체크.
+  if (data.name !== undefined && data.name !== target.name) {
+    if (me.role !== "ADMIN") {
+      return NextResponse.json(
+        { message: "캐릭터명은 관리자만 변경할 수 있습니다." },
+        { status: 403 }
+      );
+    }
+    const dup = await prisma.member.findUnique({ where: { name: data.name } });
+    if (dup && dup.id !== memberId) {
+      return NextResponse.json(
+        { message: "이미 사용 중인 캐릭터명입니다." },
+        { status: 409 }
+      );
+    }
+  }
+
+  const { bossKills, name, ...rest } = data;
+  // 변경 없으면 name 제외 (관리자가 아닌 경우 그대로 두기 위함)
+  const nameUpdate =
+    me.role === "ADMIN" && name !== undefined && name !== target.name
+      ? { name }
+      : {};
   const member = await prisma.member.update({
     where: { id: memberId },
     data: {
       ...rest,
+      ...nameUpdate,
       ...(bossKills !== undefined
         ? { bossKills: JSON.stringify(bossKills) }
         : {}),

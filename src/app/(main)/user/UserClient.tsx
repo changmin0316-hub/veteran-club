@@ -34,11 +34,14 @@ export default function UserClient({
   profile,
   bosses,
   targetMemberId,
+  canEditName = false,
 }: {
   profile: Profile;
   bosses: { id: number; name: string }[];
   // 지정 시: 관리자/운영진이 해당 길드원 정보를 수정하는 모드
   targetMemberId?: number;
+  // 관리자만 캐릭터명(로그인 ID) 변경 가능
+  canEditName?: boolean;
 }) {
   const isManagerEdit = targetMemberId != null;
   const [form, setForm] = useState<Profile>(profile);
@@ -80,6 +83,7 @@ export default function UserClient({
     setMsg(null);
     try {
       const payload: Record<string, unknown> = {
+        ...(canEditName && isManagerEdit ? { name: form.name.trim() } : {}),
         job: form.job || null,
         attack: form.attack,
         defense: form.defense,
@@ -136,12 +140,22 @@ export default function UserClient({
       </div>
 
       <div className="grid gap-4 rounded-lg border border-neutral-200 bg-white p-5">
-        <Field label="캐릭터 이름">
+        <Field label={canEditName ? "캐릭터 이름 (로그인 ID)" : "캐릭터 이름"}>
           <input
             value={form.name}
-            disabled
-            className="w-full rounded border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-500"
+            disabled={!canEditName}
+            onChange={(e) => canEditName && set("name", e.target.value)}
+            className={
+              canEditName
+                ? input
+                : "w-full rounded border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-500"
+            }
           />
+          {canEditName && (
+            <span className="text-[11px] text-amber-600">
+              캐릭터명은 로그인 ID입니다. 변경 시 해당 길드원은 새 이름으로 로그인해야 합니다.
+            </span>
+          )}
         </Field>
 
         {!isManagerEdit && (
