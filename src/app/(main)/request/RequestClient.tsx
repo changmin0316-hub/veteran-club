@@ -20,6 +20,7 @@ interface Bidder {
   job: string | null;
   statTotal: number;
   statDelta: number | null;
+  attendanceRate: number; // 0~1
 }
 interface ResultItem {
   eventItemId: number;
@@ -93,6 +94,17 @@ export default function RequestClient({
     } finally {
       setBusy(false);
     }
+  }
+
+  // 입찰자 전체 리스트에서 한 명 랜덤 선택 후 낙찰
+  async function randomAward(it: ResultItem) {
+    if (it.bidders.length === 0) {
+      flash("신청자가 없습니다.");
+      return;
+    }
+    const pick = it.bidders[Math.floor(Math.random() * it.bidders.length)];
+    await award(it.eventItemId, pick.memberId);
+    flash(`🎲 랜덤 낙찰: ${pick.name}`);
   }
 
   const guildName = (gid: number | null) =>
@@ -192,7 +204,19 @@ export default function RequestClient({
                       )}
                     </span>
                   ) : (
-                    <span className="text-xs text-neutral-400">미낙찰</span>
+                    <span className="flex items-center gap-2">
+                      {isAdmin && it.bidders.length > 0 && (
+                        <button
+                          onClick={() => randomAward(it)}
+                          disabled={busy}
+                          title="신청자 중 한 명 랜덤 낙찰"
+                          className="inline-flex items-center gap-1 rounded border border-sky-200 bg-sky-50 px-2 py-1 text-xs font-medium text-sky-700 hover:bg-sky-100 disabled:opacity-50"
+                        >
+                          🎲 랜덤
+                        </button>
+                      )}
+                      <span className="text-xs text-neutral-400">미낙찰</span>
+                    </span>
                   )}
                 </div>
 
@@ -211,6 +235,7 @@ export default function RequestClient({
                           <th className="px-3 py-1.5 text-left font-medium">직업</th>
                           <th className="px-3 py-1.5 text-left font-medium">소속</th>
                           <th className="px-3 py-1.5 text-right font-medium">3대</th>
+                          <th className="px-3 py-1.5 text-right font-medium">참석율</th>
                           <th className="w-20 px-3 py-1.5" />
                         </tr>
                       </thead>
@@ -234,6 +259,9 @@ export default function RequestClient({
                                   {b.statTotal.toLocaleString()}
                                 </span>
                                 <DeltaBadge value={b.statDelta} />
+                              </td>
+                              <td className="px-3 py-1.5 text-right tabular-nums text-neutral-600">
+                                {Math.round(b.attendanceRate * 100)}%
                               </td>
                               <td className="px-3 py-1.5 text-right">
                                 {isWinner ? (

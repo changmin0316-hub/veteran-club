@@ -49,6 +49,24 @@ export async function GET(
   // 전월 대비 총합 증감
   const deltaMap = await getStatDeltas();
 
+  // 참석율: 전체 주차 중 해당 길드원이 출석(기록 count>0)한 주차 비율
+  const [weeks, attRecords] = await Promise.all([
+    prisma.week.findMany({ select: { id: true } }),
+    prisma.attendanceRecord.findMany({
+      where: { count: { gt: 0 } },
+      select: { memberId: true, weekId: true },
+    }),
+  ]);
+  const totalWeeks = weeks.length;
+  const attendedWeeks = new Map<number, Set<number>>();
+  for (const r of attRecords) {
+    if (!attendedWeeks.has(r.memberId))
+      attendedWeeks.set(r.memberId, new Set());
+    attendedWeeks.get(r.memberId)!.add(r.weekId);
+  }
+  const attendanceRateOf = (memberId: number) =>
+    totalWeeks > 0 ? (attendedWeeks.get(memberId)?.size ?? 0) / totalWeeks : 0;
+
   return NextResponse.json({
     items: items.map((ei) => ({
       eventItemId: ei.id,
@@ -62,6 +80,7 @@ export async function GET(
         job: b.member.job,
         statTotal: b.member.attack + b.member.defense + b.member.accuracy,
         statDelta: deltaMap.get(b.member.id)?.total ?? null,
+        attendanceRate: attendanceRateOf(b.member.id),
       })),
     })),
   });
