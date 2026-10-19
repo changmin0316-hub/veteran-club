@@ -111,7 +111,7 @@ export default function RequestClient({
           {events.map((e) => (
             <option key={e.id} value={e.id}>
               {e.name}
-              {e.active ? " (진행중)" : ""}
+              {e.active ? " (진행중)" : " (마감)"}
             </option>
           ))}
         </select>
