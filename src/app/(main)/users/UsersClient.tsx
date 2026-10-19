@@ -903,6 +903,7 @@ function NumCell({
         type="number"
         value={value}
         disabled={disabled}
+        onFocus={(e) => e.target.select()}
         onChange={(e) => onChange(Number(e.target.value))}
         className={`${width} rounded border border-transparent bg-transparent px-1 py-1 text-right text-sm tabular-nums [appearance:textfield] hover:border-neutral-200 focus:border-sky-400 focus:bg-white focus:outline-none disabled:text-neutral-500 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
       />

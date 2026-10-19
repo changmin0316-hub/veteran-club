@@ -238,6 +238,7 @@ export default function UserClient({
               max={100}
               step={0.01}
               value={form.itemCollection}
+              onFocus={(e) => e.target.select()}
               onChange={(e) => set("itemCollection", Number(e.target.value))}
               className={input}
             />
@@ -330,6 +331,7 @@ function NumField({
         type="number"
         min={0}
         value={value}
+        onFocus={(e) => e.target.select()}
         onChange={(e) => onChange(Number(e.target.value))}
         className={input}
       />
