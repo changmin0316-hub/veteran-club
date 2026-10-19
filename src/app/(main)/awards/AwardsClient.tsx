@@ -130,15 +130,37 @@ export default function AwardsClient({
       .sort((a, b) => b.total - a.total);
   }, [donateFiltered]);
 
-  // 길드원별 총 기부 통계
+  // 길드원별 총 기부 통계 (아이템별 내역 포함)
   const donateByMember = useMemo(() => {
-    const map = new Map<number, { name: string; guildId: number | null; total: number }>();
+    const map = new Map<
+      number,
+      {
+        name: string;
+        guildId: number | null;
+        total: number;
+        items: Map<string, number>;
+      }
+    >();
     for (const d of donateFiltered) {
       if (!map.has(d.memberId))
-        map.set(d.memberId, { name: d.memberName, guildId: d.guildId, total: 0 });
-      map.get(d.memberId)!.total += d.quantity;
+        map.set(d.memberId, {
+          name: d.memberName,
+          guildId: d.guildId,
+          total: 0,
+          items: new Map(),
+        });
+      const e = map.get(d.memberId)!;
+      e.total += d.quantity;
+      e.items.set(d.itemName, (e.items.get(d.itemName) ?? 0) + d.quantity);
     }
-    return [...map.values()].sort((a, b) => b.total - a.total);
+    return [...map.values()]
+      .map((v) => ({
+        ...v,
+        items: [...v.items.entries()]
+          .map(([itemName, qty]) => ({ itemName, qty }))
+          .sort((a, b) => b.qty - a.qty),
+      }))
+      .sort((a, b) => b.total - a.total);
   }, [donateFiltered]);
 
   const donateTotal = useMemo(
@@ -526,15 +548,31 @@ export default function AwardsClient({
                     <th className="px-3 py-2.5 text-left font-semibold">순위</th>
                     <th className="px-3 py-2.5 text-left font-semibold">길드원</th>
                     <th className="px-3 py-2.5 text-left font-semibold">소속</th>
+                    <th className="px-3 py-2.5 text-left font-semibold">아이템별 내역</th>
                     <th className="px-3 py-2.5 text-right font-semibold">총 기부 수량</th>
                   </tr>
                 </thead>
                 <tbody>
                   {donateByMember.map((m, i) => (
-                    <tr key={m.name} className="border-b border-neutral-50">
+                    <tr key={m.name} className="border-b border-neutral-50 align-top">
                       <td className="px-3 py-2 text-neutral-400">{i + 1}</td>
                       <td className="px-3 py-2 font-medium">{m.name}</td>
                       <td className="px-3 py-2 text-neutral-500">{guildName(m.guildId)}</td>
+                      <td className="px-3 py-2">
+                        <div className="flex flex-wrap gap-1">
+                          {m.items.map((it) => (
+                            <span
+                              key={it.itemName}
+                              className="inline-flex items-center gap-1 rounded bg-neutral-100 px-2 py-0.5 text-xs text-neutral-700"
+                            >
+                              <span>{it.itemName}</span>
+                              <span className="font-semibold tabular-nums text-sky-700">
+                                {it.qty.toLocaleString()}개
+                              </span>
+                            </span>
+                          ))}
+                        </div>
+                      </td>
                       <td className="px-3 py-2 text-right font-semibold text-sky-700">
                         {m.total.toLocaleString()}개
                       </td>
@@ -543,7 +581,7 @@ export default function AwardsClient({
                 </tbody>
                 <tfoot>
                   <tr className="bg-neutral-50 font-semibold">
-                    <td className="px-3 py-2" colSpan={3}>
+                    <td className="px-3 py-2" colSpan={4}>
                       합계
                     </td>
                     <td className="px-3 py-2 text-right text-sky-700">
