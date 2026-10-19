@@ -18,6 +18,7 @@ export default function BidClient({
   initialItems,
   attendanceLinked = false,
   eligible = true,
+  linkedWeekName = null,
 }: {
   eventId: number;
   eventName: string;
@@ -25,6 +26,7 @@ export default function BidClient({
   initialItems: BidItem[];
   attendanceLinked?: boolean;
   eligible?: boolean;
+  linkedWeekName?: string | null;
 }) {
   const router = useRouter();
   const [items, setItems] = useState<BidItem[]>(initialItems);
@@ -111,8 +113,8 @@ export default function BidClient({
           ].join(" ")}
         >
           {eligible
-            ? "출석 연동 이벤트 · 입찰 자격이 확인되었습니다."
-            : "출석 연동 이벤트입니다. 해당 주차 출석 기록이 없어 신청할 수 없습니다."}
+            ? `출석 연동 이벤트${linkedWeekName ? ` (${linkedWeekName})` : ""} · 입찰 자격이 확인되었습니다.`
+            : `출석 연동 이벤트입니다. ${linkedWeekName ? `'${linkedWeekName}' ` : "해당 주차 "}출석 기록이 있어야 신청할 수 있습니다. (분배 등록에서 연동 주차를 바꾸거나 '연동 안 함'으로 해제할 수 있습니다)`}
         </div>
       )}
 

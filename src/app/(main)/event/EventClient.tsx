@@ -113,6 +113,31 @@ export default function EventClient({
     }
   }
 
+  async function changeWeek(row: EventRow, weekId: number | null) {
+    const prev = { weekId: row.weekId, weekName: row.weekName };
+    const w = weeks.find((x) => x.id === weekId);
+    setRows((rs) =>
+      rs.map((r) =>
+        r.id === row.id ? { ...r, weekId, weekName: w?.label ?? null } : r
+      )
+    );
+    const res = await fetch(`/api/events/${row.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ weekId }),
+    });
+    if (!res.ok) {
+      setRows((rs) => rs.map((r) => (r.id === row.id ? { ...r, ...prev } : r)));
+      flash("출석 연동 변경 실패");
+    } else {
+      flash(
+        weekId
+          ? `출석 연동: ${w?.label} (해당 주차 출석자만 입찰 가능)`
+          : "출석 연동 해제 (누구나 입찰 가능)"
+      );
+    }
+  }
+
   async function removeEvent(row: EventRow) {
     if (!confirm(`'${row.name}' 이벤트를 삭제할까요? 등록된 아이템/신청도 함께 삭제됩니다.`))
       return;
@@ -202,11 +227,32 @@ export default function EventClient({
               className="flex-1 rounded border border-transparent px-2 py-1.5 text-sm hover:border-neutral-200 focus:border-sky-400 focus:outline-none"
             />
 
-            {row.weekName && (
-              <span className="shrink-0 rounded bg-neutral-100 px-2 py-1 text-xs text-neutral-500">
-                {row.weekName}
-              </span>
-            )}
+            <select
+              value={row.weekId ?? ""}
+              onChange={(e) =>
+                changeWeek(row, e.target.value ? Number(e.target.value) : null)
+              }
+              title="출석 연동 주차 (연동 안 함 = 출석 무관 입찰 가능)"
+              className="shrink-0 rounded border border-neutral-200 bg-neutral-50 px-2 py-1.5 text-xs text-neutral-600 focus:border-sky-400 focus:outline-none"
+            >
+              <option value="">출석 연동 안 함</option>
+              {weeks.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.label} 연동
+                </option>
+              ))}
+            </select>
+
+            <span
+              className={[
+                "shrink-0 rounded px-2 py-1 text-xs",
+                row.weekId
+                  ? "bg-amber-50 text-amber-600"
+                  : "bg-emerald-50 text-emerald-600",
+              ].join(" ")}
+            >
+              {row.weekId ? "출석필수" : "누구나"}
+            </span>
 
             <button
               onClick={() => setEditing(row)}

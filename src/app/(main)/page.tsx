@@ -11,6 +11,7 @@ export default async function ItemRequestPage() {
     where: { active: true },
     orderBy: { createdAt: "desc" },
     include: {
+      week: true,
       items: {
         include: { item: true, _count: { select: { bids: true } } },
         orderBy: { id: "asc" },
@@ -57,6 +58,10 @@ export default async function ItemRequestPage() {
     eligible = !!attended;
   }
 
+  const linkedWeekName = activeEvent.week
+    ? activeEvent.week.name ?? `${activeEvent.week.number}주차`
+    : null;
+
   return (
     <BidClient
       eventId={activeEvent.id}
@@ -65,6 +70,7 @@ export default async function ItemRequestPage() {
       initialItems={items}
       attendanceLinked={attendanceLinked}
       eligible={eligible}
+      linkedWeekName={linkedWeekName}
     />
   );
 }
