@@ -77,6 +77,12 @@ export default function AttendanceClient({
 
   const dirtyCount = Object.keys(edits).length;
   const baseCols = isManager ? 5 : 3; // 캐릭명·출석율·적용횟수(+분배율·분배금)
+  // 길드원(비관리자)은 본인 행만 표시
+  const rowsToShow = data
+    ? isManager
+      ? data.rows
+      : data.rows.filter((r) => myName != null && r.name === myName)
+    : [];
 
   return (
     <section>
@@ -150,7 +156,7 @@ export default function AttendanceClient({
               </tr>
             )}
             {!loading &&
-              data?.rows.map((r) => {
+              rowsToShow.map((r) => {
                 const mine = myName != null && r.name === myName;
                 return (
                 <tr
@@ -200,7 +206,7 @@ export default function AttendanceClient({
                   <td className="px-3 py-2 text-right text-neutral-500">
                     {r.applied}
                   </td>
-                  {data.categories.map((c) => (
+                  {(data?.categories ?? []).map((c) => (
                     <td key={c.id} className="px-2 py-1.5 text-center">
                       {isManager ? (
                         <input
@@ -222,10 +228,10 @@ export default function AttendanceClient({
                 </tr>
                 );
               })}
-            {!loading && data && data.rows.length === 0 && (
+            {!loading && data && rowsToShow.length === 0 && (
               <tr>
                 <td colSpan={baseCols + data.categories.length} className="py-8 text-center text-neutral-400">
-                  해당 군에 길드원이 없습니다.
+                  {isManager ? "해당 군에 길드원이 없습니다." : "본인 출석 정보가 없습니다."}
                 </td>
               </tr>
             )}

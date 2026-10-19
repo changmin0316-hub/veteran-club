@@ -14,6 +14,10 @@ const updateSchema = z.object({
   accuracy: z.number().int().min(0).optional(),
   legendSkill: z.boolean().optional(),
   bossKills: z.record(z.string(), z.boolean()).optional(),
+  myth1: z.number().int().min(0).optional(),
+  myth2: z.number().int().min(0).optional(),
+  equipImage: z.string().max(3_000_000).nullable().optional(),
+  heavenImage: z.string().max(3_000_000).nullable().optional(),
 });
 
 // 수정

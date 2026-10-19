@@ -31,10 +31,14 @@ type ImgKind = "equipImage" | "heavenImage";
 export default function UserClient({
   profile,
   bosses,
+  targetMemberId,
 }: {
   profile: Profile;
   bosses: { id: number; name: string }[];
+  // 지정 시: 관리자/운영진이 해당 길드원 정보를 수정하는 모드
+  targetMemberId?: number;
 }) {
+  const isManagerEdit = targetMemberId != null;
   const [form, setForm] = useState<Profile>(profile);
   const [newPassword, setNewPassword] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -84,11 +88,15 @@ export default function UserClient({
         equipImage: form.equipImage,
         heavenImage: form.heavenImage,
       };
-      if (newPassword) {
+      // 본인 모드일 때만 비밀번호 변경 지원
+      if (!isManagerEdit && newPassword) {
         payload.newPassword = newPassword;
         payload.currentPassword = currentPassword;
       }
-      const res = await fetch("/api/me", {
+      const endpoint = isManagerEdit
+        ? `/api/members/${targetMemberId}`
+        : "/api/me";
+      const res = await fetch(endpoint, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -109,7 +117,19 @@ export default function UserClient({
 
   return (
     <section className="max-w-2xl">
-      <h2 className="mb-4 text-base font-bold">내 정보 변경</h2>
+      <div className="mb-4 flex items-center gap-2">
+        {isManagerEdit && (
+          <a
+            href="/users"
+            className="rounded border border-neutral-300 bg-neutral-50 px-2.5 py-1 text-sm text-neutral-600 hover:bg-neutral-100"
+          >
+            ← 목록
+          </a>
+        )}
+        <h2 className="text-base font-bold">
+          {isManagerEdit ? `${form.name} 정보 변경` : "내 정보 변경"}
+        </h2>
+      </div>
 
       <div className="grid gap-4 rounded-lg border border-neutral-200 bg-white p-5">
         <Field label="캐릭터 이름">
@@ -120,26 +140,33 @@ export default function UserClient({
           />
         </Field>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="현재 비밀번호 (변경 시)">
-            <input
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              placeholder="변경할 때만 입력"
-              className={input}
-            />
-          </Field>
-          <Field label="변경할 비밀번호">
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="비워두면 변경 안 함"
-              className={input}
-            />
-          </Field>
-        </div>
+        {!isManagerEdit && (
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="현재 비밀번호 (변경 시)">
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="변경할 때만 입력"
+                className={input}
+              />
+            </Field>
+            <Field label="변경할 비밀번호">
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="비워두면 변경 안 함"
+                className={input}
+              />
+            </Field>
+          </div>
+        )}
+        {isManagerEdit && (
+          <p className="rounded bg-neutral-50 px-3 py-2 text-xs text-neutral-500">
+            비밀번호는 길드원 목록의 <b>비번초기화</b>로 처리하세요.
+          </p>
+        )}
 
         {/* 이미지 첨부 (장비 / 헤븐스톤) */}
         <div>

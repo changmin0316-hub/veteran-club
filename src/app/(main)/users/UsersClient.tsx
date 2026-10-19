@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 
 export type RoleValue = "ADMIN" | "COMMANDER" | "MEMBER";
 
@@ -353,7 +354,7 @@ export default function UsersClient({
                 <th key={b.id} className="px-1 py-2 align-bottom">
                   <div className="mx-auto flex h-24 w-6 items-end justify-center">
                     <span
-                      className="whitespace-nowrap text-[11px] font-semibold leading-none [writing-mode:vertical-rl] rotate-180"
+                      className="whitespace-nowrap text-[11px] font-semibold leading-none [writing-mode:vertical-rl]"
                       title={b.name}
                     >
                       {b.name}
@@ -391,7 +392,17 @@ export default function UsersClient({
                   <td
                     className={`sticky z-10 bg-white px-3 py-2 font-medium ${isManager ? "left-10" : "left-0"}`}
                   >
-                    {r.name}
+                    {isManager ? (
+                      <Link
+                        href={`/users/${r.id}`}
+                        className="text-sky-600 hover:underline"
+                        title="개인 정보 수정"
+                      >
+                        {r.name}
+                      </Link>
+                    ) : (
+                      r.name
+                    )}
                   </td>
                   <td className="px-2 py-2">
                     {isManager ? (
