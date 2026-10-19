@@ -98,6 +98,7 @@ export default function UsersClient({
     return {
       count: rows.length,
       byRole,
+      totalSum,
       avgTotal: rows.length ? Math.round(totalSum / rows.length) : 0,
     };
   }, [rows]);
@@ -271,7 +272,12 @@ export default function UsersClient({
           value={`관리자 ${summary.byRole.ADMIN} · 운영진 ${summary.byRole.COMMANDER}`}
           sub={`길드원 ${summary.byRole.MEMBER}명`}
         />
-        <StatCard label="평균 3대" value={summary.avgTotal.toLocaleString()} tone="amber" />
+        <StatCard
+          label="평균 3대"
+          value={summary.avgTotal.toLocaleString()}
+          sub={`총합 ${summary.totalSum.toLocaleString()}`}
+          tone="amber"
+        />
       </div>
 
       {isManager && (
