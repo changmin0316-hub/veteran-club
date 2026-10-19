@@ -11,7 +11,7 @@ export interface ItemRow {
 }
 
 const RARITIES = ["일반", "고급", "희귀", "영웅", "전설"];
-const CATEGORIES = ["무기", "방어구", "장신구", "기타"];
+const CATEGORIES = ["무기", "방어구", "장신구", "헤븐스톤", "기타"];
 
 export default function ItemClient({
   initialRows,

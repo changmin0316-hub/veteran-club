@@ -12,15 +12,14 @@ const TABS = [
   { href: "/attendance", label: "출석 현황", managerOnly: false },
   { href: "/closing", label: "주차(시즌) 결산", managerOnly: true },
   { href: "/adjustment", label: "분배금 정산", managerOnly: true },
+  { href: "/awards", label: "낙찰 통계", managerOnly: true },
 ];
 
 export default function NavTabs({ isManager }: { isManager: boolean }) {
   const pathname = usePathname();
   const tabs = TABS.filter((t) => isManager || !t.managerOnly);
-  const cols =
-    tabs.length >= 7 ? "lg:grid-cols-7" : "lg:grid-cols-4";
   return (
-    <nav className={`grid grid-cols-2 gap-1 sm:grid-cols-4 ${cols}`}>
+    <nav className="grid grid-cols-2 gap-1 sm:grid-cols-4">
       {tabs.map((t) => {
         const active = pathname === t.href;
         return (
