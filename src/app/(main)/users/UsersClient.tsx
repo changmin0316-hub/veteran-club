@@ -14,6 +14,9 @@ export interface MemberRow {
   attack: number;
   defense: number;
   accuracy: number;
+  myth1: number;
+  myth2: number;
+  pvpKills: number;
   bossKills: Record<string, boolean>;
 }
 
@@ -115,6 +118,9 @@ export default function UsersClient({
         o.attack !== r.attack ||
         o.defense !== r.defense ||
         o.accuracy !== r.accuracy ||
+        o.myth1 !== r.myth1 ||
+        o.myth2 !== r.myth2 ||
+        o.pvpKills !== r.pvpKills ||
         bossKillsChanged(o.bossKills, r.bossKills, bosses)
       )
         ids.push(r.id);
@@ -177,6 +183,9 @@ export default function UsersClient({
             attack: r.attack,
             defense: r.defense,
             accuracy: r.accuracy,
+            myth1: r.myth1,
+            myth2: r.myth2,
+            pvpKills: r.pvpKills,
             bossKills: r.bossKills,
           }),
         });
@@ -335,7 +344,7 @@ export default function UsersClient({
       )}
 
       <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
-        <table className="w-full text-sm" style={{ minWidth: isManager ? 960 : 560 }}>
+        <table className="w-full text-sm" style={{ minWidth: isManager ? 1200 : 560 }}>
           <thead>
             <tr className="border-b border-neutral-200 bg-neutral-50 text-neutral-600">
               {isManager && (
@@ -370,6 +379,9 @@ export default function UsersClient({
               ))}
               {isManager && (
                 <>
+                  <Th right>신화성의</Th>
+                  <Th right>신화사역마</Th>
+                  <Th right>쟁탈전</Th>
                   <Th right>공격</Th>
                   <Th right>방어</Th>
                   <Th right>명중</Th>
@@ -476,6 +488,21 @@ export default function UsersClient({
                   {isManager && (
                     <>
                       <NumCell
+                        value={r.myth1}
+                        disabled={!editable}
+                        onChange={(v) => patch(r.id, { myth1: v })}
+                      />
+                      <NumCell
+                        value={r.myth2}
+                        disabled={!editable}
+                        onChange={(v) => patch(r.id, { myth2: v })}
+                      />
+                      <NumCell
+                        value={r.pvpKills}
+                        disabled={!editable}
+                        onChange={(v) => patch(r.id, { pvpKills: v })}
+                      />
+                      <NumCell
                         value={r.attack}
                         delta={deltas[r.id]?.attack}
                         disabled={!editable}
@@ -535,7 +562,7 @@ export default function UsersClient({
             {visible.length === 0 && (
               <tr>
                 <td
-                  colSpan={3 + bosses.length + (isManager ? 7 : 0)}
+                  colSpan={3 + bosses.length + (isManager ? 10 : 0)}
                   className="py-8 text-center text-neutral-400"
                 >
                   해당 군에 길드원이 없습니다.
@@ -626,6 +653,9 @@ function AddMemberModal({
         attack: m.attack,
         defense: m.defense,
         accuracy: m.accuracy,
+        myth1: m.myth1 ?? 0,
+        myth2: m.myth2 ?? 0,
+        pvpKills: m.pvpKills ?? 0,
         bossKills: {},
       });
     } catch (e) {

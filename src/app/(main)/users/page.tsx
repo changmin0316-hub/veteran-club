@@ -46,6 +46,9 @@ export default async function UsersPage() {
     attack: m.attack,
     defense: m.defense,
     accuracy: m.accuracy,
+    myth1: m.myth1,
+    myth2: m.myth2,
+    pvpKills: m.pvpKills,
     bossKills: parseBossKills(m.bossKills),
   }));
 

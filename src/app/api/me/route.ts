@@ -33,6 +33,7 @@ export async function GET() {
       legendSkill: true,
       myth1: true,
       myth2: true,
+      pvpKills: true,
       bossKills: true,
       guildId: true,
       equipImage: true,
@@ -50,6 +51,7 @@ const schema = z.object({
   legendSkill: z.boolean().optional(),
   myth1: z.number().int().min(0).optional(),
   myth2: z.number().int().min(0).optional(),
+  pvpKills: z.number().int().min(0).optional(),
   bossKills: z.record(z.string(), z.boolean()).optional(),
   // 이미지(data URL) 또는 null(삭제). 과도한 용량 방지 위해 상한 설정.
   equipImage: z.string().max(3_000_000).nullable().optional(),
@@ -90,6 +92,7 @@ export async function PATCH(req: NextRequest) {
   if (d.legendSkill !== undefined) data.legendSkill = d.legendSkill;
   if (d.myth1 !== undefined) data.myth1 = d.myth1;
   if (d.myth2 !== undefined) data.myth2 = d.myth2;
+  if (d.pvpKills !== undefined) data.pvpKills = d.pvpKills;
   if (d.bossKills !== undefined) data.bossKills = JSON.stringify(d.bossKills);
   if (d.equipImage !== undefined) data.equipImage = d.equipImage;
   if (d.heavenImage !== undefined) data.heavenImage = d.heavenImage;

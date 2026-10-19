@@ -33,6 +33,7 @@ export default async function UserPage() {
         legendSkill: member.legendSkill,
         myth1: member.myth1,
         myth2: member.myth2,
+        pvpKills: member.pvpKills,
         bossKills,
         equipImage: member.equipImage ?? null,
         heavenImage: member.heavenImage ?? null,

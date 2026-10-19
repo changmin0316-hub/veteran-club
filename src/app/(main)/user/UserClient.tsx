@@ -21,6 +21,7 @@ interface Profile {
   legendSkill: boolean;
   myth1: number;
   myth2: number;
+  pvpKills: number;
   bossKills: Record<string, boolean>;
   equipImage: string | null;
   heavenImage: string | null;
@@ -84,6 +85,7 @@ export default function UserClient({
         accuracy: form.accuracy,
         myth1: form.myth1,
         myth2: form.myth2,
+        pvpKills: form.pvpKills,
         bossKills: form.bossKills,
         equipImage: form.equipImage,
         heavenImage: form.heavenImage,
@@ -212,6 +214,7 @@ export default function UserClient({
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <NumField label="신화성의" value={form.myth1} onChange={(v) => set("myth1", v)} />
           <NumField label="신화사역마" value={form.myth2} onChange={(v) => set("myth2", v)} />
+          <NumField label="쟁탈전 킬수" value={form.pvpKills} onChange={(v) => set("pvpKills", v)} />
           <Field label="3대 총합">
             <div className="rounded border border-neutral-100 bg-neutral-50 px-3 py-2 text-sm font-semibold">
               {total.toLocaleString()}
