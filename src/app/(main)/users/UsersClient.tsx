@@ -74,14 +74,31 @@ export default function UsersClient({
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [search, setSearch] = useState("");
 
-  const visible = useMemo(
-    () =>
-      activeGuild === "all"
-        ? rows
-        : rows.filter((r) => r.guildId === activeGuild),
-    [rows, activeGuild]
-  );
+  const visible = useMemo(() => {
+    const q = search.trim();
+    return rows.filter(
+      (r) =>
+        (activeGuild === "all" || r.guildId === activeGuild) &&
+        (!q || r.name.includes(q) || (r.job ?? "").includes(q))
+    );
+  }, [rows, activeGuild, search]);
+
+  // 요약 집계
+  const summary = useMemo(() => {
+    const byRole = { ADMIN: 0, COMMANDER: 0, MEMBER: 0 } as Record<RoleValue, number>;
+    let totalSum = 0;
+    for (const r of rows) {
+      byRole[r.role] = (byRole[r.role] ?? 0) + 1;
+      totalSum += r.attack + r.defense + r.accuracy;
+    }
+    return {
+      count: rows.length,
+      byRole,
+      avgTotal: rows.length ? Math.round(totalSum / rows.length) : 0,
+    };
+  }, [rows]);
 
   const dirtyIds = useMemo(() => {
     const ids: number[] = [];
@@ -239,19 +256,31 @@ export default function UsersClient({
 
   return (
     <section>
-      <div className="mb-3 rounded-lg bg-neutral-100 px-4 py-3 text-sm text-neutral-500">
-        왼쪽 체크박스 선택 후 <b className="text-neutral-700">비번초기화</b>를 누르면
-        비밀번호를 초기화할 수 있습니다. 값을 수정한 뒤{" "}
-        <b className="text-neutral-700">저장</b>을 눌러 반영하세요.
+      {/* 요약 대시보드 */}
+      <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <StatCard label="총 길드원" value={`${summary.count}명`} tone="sky" />
+        <StatCard
+          label="군 구성"
+          value={guilds.map((g) => rows.filter((r) => r.guildId === g.id).length).join(" · ")}
+          sub={guilds.map((g) => `${g.order}군`).join(" · ")}
+        />
+        <StatCard
+          label="권한"
+          value={`원장 ${summary.byRole.ADMIN} · 사단장 ${summary.byRole.COMMANDER}`}
+          sub={`길드원 ${summary.byRole.MEMBER}명`}
+        />
+        <StatCard label="평균 3대" value={summary.avgTotal.toLocaleString()} tone="amber" />
       </div>
 
-      {/* 군 필터 + 액션 */}
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <p className="mb-3 rounded-lg bg-neutral-100 px-4 py-2.5 text-xs text-neutral-500">
+        체크박스 선택 후 <b className="text-neutral-700">비번초기화</b> · 값 수정 후{" "}
+        <b className="text-neutral-700">저장</b>. 스탯 옆 ▲빨강=상승 / ▼파랑=하락(전월 대비).
+      </p>
+
+      {/* 필터 · 검색 · 액션 */}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         <div className="flex flex-wrap gap-1.5">
-          <GuildTab
-            active={activeGuild === "all"}
-            onClick={() => setActiveGuild("all")}
-          >
+          <GuildTab active={activeGuild === "all"} onClick={() => setActiveGuild("all")}>
             전체 ({rows.length})
           </GuildTab>
           {guilds.map((g) => (
@@ -260,11 +289,16 @@ export default function UsersClient({
               active={activeGuild === g.id}
               onClick={() => setActiveGuild(g.id)}
             >
-              {g.order}군 - {g.name} (
-              {rows.filter((r) => r.guildId === g.id).length})
+              {g.order}군 ({rows.filter((r) => r.guildId === g.id).length})
             </GuildTab>
           ))}
         </div>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="캐릭명·직업 검색"
+          className="ml-auto w-40 rounded border border-neutral-300 px-3 py-1.5 text-sm focus:border-sky-400 focus:outline-none"
+        />
         <div className="flex gap-1.5">
           <button onClick={resetPasswords} disabled={busy} className={btnGhost}>
             비번초기화
@@ -292,7 +326,7 @@ export default function UsersClient({
         <table className="w-full min-w-[820px] text-sm">
           <thead>
             <tr className="border-b border-neutral-200 bg-neutral-50 text-neutral-600">
-              <th className="w-10 px-3 py-2.5">
+              <th className="sticky left-0 z-20 w-10 bg-neutral-50 px-3 py-2.5">
                 <input
                   type="checkbox"
                   checked={
@@ -302,7 +336,9 @@ export default function UsersClient({
                   onChange={toggleAll}
                 />
               </th>
-              <Th>캐릭명</Th>
+              <th className="sticky left-10 z-20 bg-neutral-50 px-3 py-2.5 text-left font-semibold">
+                캐릭명
+              </th>
               <Th>직업</Th>
               <Th>소속</Th>
               {bosses.map((b) => (
@@ -330,14 +366,16 @@ export default function UsersClient({
                   key={r.id}
                   className="border-b border-neutral-50 hover:bg-neutral-50"
                 >
-                  <td className="px-3 py-2 text-center">
+                  <td className="sticky left-0 z-10 bg-white px-3 py-2 text-center">
                     <input
                       type="checkbox"
                       checked={selected.has(r.id)}
                       onChange={() => toggle(r.id)}
                     />
                   </td>
-                  <td className="px-3 py-2 font-medium">{r.name}</td>
+                  <td className="sticky left-10 z-10 bg-white px-3 py-2 font-medium">
+                    {r.name}
+                  </td>
                   <td className="px-3 py-2">
                     <input
                       value={r.job}
@@ -374,16 +412,16 @@ export default function UsersClient({
                           type="button"
                           disabled={!editable}
                           onClick={() => toggleBoss(r.id, b.id)}
-                          title={b.name}
+                          title={`${b.name} · ${on ? "처치" : "미처치"}`}
                           className={[
-                            "h-6 w-10 rounded text-xs font-medium transition",
+                            "h-7 w-9 rounded text-sm font-bold transition",
                             on
-                              ? "bg-emerald-100 text-emerald-700"
-                              : "bg-neutral-100 text-neutral-300",
+                              ? "bg-emerald-500 text-white"
+                              : "border border-neutral-300 bg-white text-neutral-400",
                             editable ? "hover:opacity-80" : "cursor-default",
                           ].join(" ")}
                         >
-                          {on ? "O" : "·"}
+                          {on ? "✓" : "✕"}
                         </button>
                       </td>
                     );
@@ -651,6 +689,32 @@ function AddMemberModal({
 
 /* ---------- 작은 컴포넌트/스타일 ---------- */
 
+function StatCard({
+  label,
+  value,
+  sub,
+  tone = "neutral",
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  tone?: "neutral" | "sky" | "amber";
+}) {
+  const toneCls =
+    tone === "sky"
+      ? "border-sky-200 bg-sky-50"
+      : tone === "amber"
+        ? "border-amber-200 bg-amber-50"
+        : "border-neutral-200 bg-white";
+  return (
+    <div className={`rounded-lg border ${toneCls} px-4 py-3`}>
+      <p className="text-xs text-neutral-500">{label}</p>
+      <p className="mt-0.5 text-lg font-bold text-neutral-800">{value}</p>
+      {sub && <p className="text-[11px] text-neutral-400">{sub}</p>}
+    </div>
+  );
+}
+
 function GuildTab({
   active,
   onClick,
@@ -704,7 +768,7 @@ function NumCell({
 function DeltaBadge({ value }: { value?: number }) {
   if (value === undefined || value === null) return null;
   if (value === 0)
-    return <div className="text-right text-[11px] text-neutral-300">–</div>;
+    return <div className="text-right text-[11px] text-neutral-400">±0</div>;
   const up = value > 0;
   return (
     <div
