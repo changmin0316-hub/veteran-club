@@ -17,6 +17,7 @@ export interface MemberRow {
   myth1: number;
   myth2: number;
   pvpKills: number;
+  itemCollection: number;
   bossKills: Record<string, boolean>;
 }
 
@@ -46,7 +47,13 @@ const ROLE_LABEL: Record<RoleValue, string> = {
   MEMBER: "길드원",
 };
 
-type SortKey = "name" | "attack" | "defense" | "accuracy" | "total";
+type SortKey =
+  | "name"
+  | "attack"
+  | "defense"
+  | "accuracy"
+  | "total"
+  | "itemCollection";
 
 function bossKillsChanged(
   a: Record<string, boolean>,
@@ -372,7 +379,7 @@ export default function UsersClient({
       )}
 
       <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
-        <table className="w-full text-sm" style={{ minWidth: isManager ? 1080 : 520 }}>
+        <table className="w-full text-sm" style={{ minWidth: isManager ? 1140 : 520 }}>
           <thead>
             <tr className="border-b border-neutral-200 bg-neutral-50 text-neutral-600">
               {isManager && (
@@ -420,6 +427,12 @@ export default function UsersClient({
                   <SortTh label="방어" k="defense" sort={sort} onSort={toggleSort} />
                   <SortTh label="명중" k="accuracy" sort={sort} onSort={toggleSort} />
                   <SortTh label="총합" k="total" sort={sort} onSort={toggleSort} />
+                  <SortTh
+                    label="템컬렉"
+                    k="itemCollection"
+                    sort={sort}
+                    onSort={toggleSort}
+                  />
                   <Th>권한</Th>
                   <th className="w-12 px-3 py-2.5" />
                 </>
@@ -560,6 +573,9 @@ export default function UsersClient({
                         </div>
                         <DeltaBadge value={deltas[r.id]?.total} />
                       </td>
+                      <td className="px-1.5 py-1.5 text-right tabular-nums text-neutral-700">
+                        {r.itemCollection.toFixed(2)}%
+                      </td>
                       <td className="px-1.5 py-1.5">
                         <select
                           value={r.role}
@@ -596,7 +612,7 @@ export default function UsersClient({
             {visible.length === 0 && (
               <tr>
                 <td
-                  colSpan={3 + bosses.length + (isManager ? 10 : 0)}
+                  colSpan={3 + bosses.length + (isManager ? 11 : 0)}
                   className="py-8 text-center text-neutral-400"
                 >
                   해당 군에 길드원이 없습니다.
@@ -690,6 +706,7 @@ function AddMemberModal({
         myth1: m.myth1 ?? 0,
         myth2: m.myth2 ?? 0,
         pvpKills: m.pvpKills ?? 0,
+        itemCollection: m.itemCollection ?? 0,
         bossKills: {},
       });
     } catch (e) {

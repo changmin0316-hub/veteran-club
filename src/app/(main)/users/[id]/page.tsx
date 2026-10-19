@@ -41,6 +41,7 @@ export default async function MemberEditPage({
         myth1: member.myth1,
         myth2: member.myth2,
         pvpKills: member.pvpKills,
+        itemCollection: member.itemCollection,
         bossKills,
         equipImage: member.equipImage ?? null,
         heavenImage: member.heavenImage ?? null,

@@ -49,6 +49,7 @@ export default async function UsersPage() {
     myth1: m.myth1,
     myth2: m.myth2,
     pvpKills: m.pvpKills,
+    itemCollection: m.itemCollection,
     bossKills: parseBossKills(m.bossKills),
   }));
 
