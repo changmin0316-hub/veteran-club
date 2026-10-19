@@ -46,6 +46,8 @@ const ROLE_LABEL: Record<RoleValue, string> = {
   MEMBER: "길드원",
 };
 
+type SortKey = "name" | "attack" | "defense" | "accuracy" | "total";
+
 function bossKillsChanged(
   a: Record<string, boolean>,
   b: Record<string, boolean>,
@@ -80,15 +82,41 @@ export default function UsersClient({
   const [msg, setMsg] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" } | null>(
+    null
+  );
 
   const visible = useMemo(() => {
     const q = search.trim();
-    return rows.filter(
+    const filtered = rows.filter(
       (r) =>
         (activeGuild === "all" || r.guildId === activeGuild) &&
         (!q || r.name.includes(q) || (r.job ?? "").includes(q))
     );
-  }, [rows, activeGuild, search]);
+    if (!sort) return filtered;
+    const dir = sort.dir === "asc" ? 1 : -1;
+    const val = (r: MemberRow) =>
+      sort.key === "name"
+        ? r.name
+        : sort.key === "total"
+          ? r.attack + r.defense + r.accuracy
+          : r[sort.key];
+    return [...filtered].sort((a, b) => {
+      const va = val(a);
+      const vb = val(b);
+      if (typeof va === "string" && typeof vb === "string")
+        return va.localeCompare(vb) * dir;
+      return ((va as number) - (vb as number)) * dir;
+    });
+  }, [rows, activeGuild, search, sort]);
+
+  function toggleSort(key: SortKey) {
+    setSort((prev) =>
+      prev && prev.key === key
+        ? { key, dir: prev.dir === "asc" ? "desc" : "asc" }
+        : { key, dir: key === "name" ? "asc" : "desc" }
+    );
+  }
 
   // 요약 집계
   const summary = useMemo(() => {
@@ -344,7 +372,7 @@ export default function UsersClient({
       )}
 
       <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
-        <table className="w-full text-sm" style={{ minWidth: isManager ? 1200 : 560 }}>
+        <table className="w-full text-sm" style={{ minWidth: isManager ? 1080 : 520 }}>
           <thead>
             <tr className="border-b border-neutral-200 bg-neutral-50 text-neutral-600">
               {isManager && (
@@ -361,13 +389,19 @@ export default function UsersClient({
               <th
                 className={`sticky z-20 bg-neutral-50 px-3 py-2.5 text-left font-semibold ${isManager ? "left-10" : "left-0"}`}
               >
-                캐릭명
+                <button
+                  onClick={() => toggleSort("name")}
+                  className="inline-flex items-center gap-1 font-semibold hover:text-sky-600"
+                >
+                  캐릭명
+                  <SortArrow active={sort?.key === "name"} dir={sort?.dir} />
+                </button>
               </th>
               <Th>직업</Th>
               <Th>소속</Th>
               {bosses.map((b) => (
-                <th key={b.id} className="px-1 py-2 align-bottom">
-                  <div className="mx-auto flex h-24 w-6 items-end justify-center">
+                <th key={b.id} className="px-0.5 py-2 align-bottom">
+                  <div className="mx-auto flex h-16 w-5 items-end justify-center">
                     <span
                       className="whitespace-nowrap text-[11px] font-semibold leading-none [writing-mode:vertical-rl]"
                       title={b.name}
@@ -382,10 +416,10 @@ export default function UsersClient({
                   <Th right>신화성의</Th>
                   <Th right>신화사역마</Th>
                   <Th right>쟁탈전</Th>
-                  <Th right>공격</Th>
-                  <Th right>방어</Th>
-                  <Th right>명중</Th>
-                  <Th right>총합</Th>
+                  <SortTh label="공격" k="attack" sort={sort} onSort={toggleSort} />
+                  <SortTh label="방어" k="defense" sort={sort} onSort={toggleSort} />
+                  <SortTh label="명중" k="accuracy" sort={sort} onSort={toggleSort} />
+                  <SortTh label="총합" k="total" sort={sort} onSort={toggleSort} />
                   <Th>권한</Th>
                   <th className="w-12 px-3 py-2.5" />
                 </>
@@ -422,20 +456,20 @@ export default function UsersClient({
                       r.name
                     )}
                   </td>
-                  <td className="px-2 py-2">
+                  <td className="px-1.5 py-1.5">
                     {isManager ? (
                       <input
                         value={r.job}
                         disabled={!editable}
                         onChange={(e) => patch(r.id, { job: e.target.value })}
-                        className={`${cellInput} w-24`}
+                        className={`${cellInput} w-20`}
                         placeholder="직업"
                       />
                     ) : (
                       <span className="text-neutral-700">{r.job || "-"}</span>
                     )}
                   </td>
-                  <td className="px-2 py-2">
+                  <td className="px-1.5 py-1.5">
                     {isManager ? (
                       <select
                         value={r.guildId ?? ""}
@@ -445,7 +479,7 @@ export default function UsersClient({
                             guildId: e.target.value ? Number(e.target.value) : null,
                           })
                         }
-                        className={`${cellInput} w-20`}
+                        className={`${cellInput} w-16`}
                         title={g ? `${g.order}군 - ${g.name}` : "미지정"}
                       >
                         <option value="">미지정</option>
@@ -464,14 +498,14 @@ export default function UsersClient({
                   {bosses.map((b) => {
                     const on = !!r.bossKills[b.id];
                     return (
-                      <td key={b.id} className="px-1 py-2 text-center">
+                      <td key={b.id} className="px-0.5 py-1.5 text-center">
                         <button
                           type="button"
                           disabled={!isManager || !editable}
                           onClick={() => toggleBoss(r.id, b.id)}
                           title={`${b.name} · ${on ? "처치" : "미처치"}`}
                           className={[
-                            "h-6 w-7 rounded text-xs font-bold",
+                            "h-6 w-6 rounded text-xs font-bold",
                             on
                               ? "bg-emerald-500 text-white"
                               : "border border-neutral-300 bg-white text-neutral-400",
@@ -520,20 +554,20 @@ export default function UsersClient({
                         disabled={!editable}
                         onChange={(v) => patch(r.id, { accuracy: v })}
                       />
-                      <td className="px-3 py-2 text-right font-semibold">
+                      <td className="px-1.5 py-1.5 text-right font-semibold">
                         <div>
                           {(r.attack + r.defense + r.accuracy).toLocaleString()}
                         </div>
                         <DeltaBadge value={deltas[r.id]?.total} />
                       </td>
-                      <td className="px-3 py-2">
+                      <td className="px-1.5 py-1.5">
                         <select
                           value={r.role}
                           disabled={!editable}
                           onChange={(e) =>
                             patch(r.id, { role: e.target.value as RoleValue })
                           }
-                          className={`${cellInput} w-20`}
+                          className={`${cellInput} w-16`}
                         >
                           <option value="MEMBER">{ROLE_LABEL.MEMBER}</option>
                           <option value="COMMANDER">{ROLE_LABEL.COMMANDER}</option>
@@ -837,13 +871,13 @@ function NumCell({
   onChange: (v: number) => void;
 }) {
   return (
-    <td className="px-2 py-2">
+    <td className="px-1 py-1.5">
       <input
         type="number"
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-16 rounded border border-transparent bg-transparent px-1 py-1 text-right text-sm tabular-nums [appearance:textfield] hover:border-neutral-200 focus:border-sky-400 focus:bg-white focus:outline-none disabled:text-neutral-500 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        className="w-14 rounded border border-transparent bg-transparent px-1 py-1 text-right text-sm tabular-nums [appearance:textfield] hover:border-neutral-200 focus:border-sky-400 focus:bg-white focus:outline-none disabled:text-neutral-500 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
       <DeltaBadge value={delta} />
     </td>
@@ -874,9 +908,47 @@ function Th({
 }) {
   return (
     <th
-      className={`px-3 py-2.5 font-semibold ${right ? "text-right" : "text-left"}`}
+      className={`px-2 py-2.5 font-semibold ${right ? "text-right" : "text-left"}`}
     >
       {children}
+    </th>
+  );
+}
+
+function SortArrow({
+  active,
+  dir,
+}: {
+  active: boolean;
+  dir?: "asc" | "desc";
+}) {
+  return (
+    <span className={active ? "text-sky-600" : "text-neutral-300"}>
+      {active ? (dir === "asc" ? "▲" : "▼") : "↕"}
+    </span>
+  );
+}
+
+function SortTh({
+  label,
+  k,
+  sort,
+  onSort,
+}: {
+  label: string;
+  k: SortKey;
+  sort: { key: SortKey; dir: "asc" | "desc" } | null;
+  onSort: (k: SortKey) => void;
+}) {
+  return (
+    <th className="px-2 py-2.5 text-right font-semibold">
+      <button
+        onClick={() => onSort(k)}
+        className="inline-flex items-center gap-1 font-semibold hover:text-sky-600"
+      >
+        {label}
+        <SortArrow active={sort?.key === k} dir={sort?.dir} />
+      </button>
     </th>
   );
 }
