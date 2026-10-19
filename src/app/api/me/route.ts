@@ -35,6 +35,8 @@ export async function GET() {
       myth2: true,
       bossKills: true,
       guildId: true,
+      equipImage: true,
+      heavenImage: true,
     },
   });
   return NextResponse.json({ member });
@@ -49,6 +51,9 @@ const schema = z.object({
   myth1: z.number().int().min(0).optional(),
   myth2: z.number().int().min(0).optional(),
   bossKills: z.record(z.string(), z.boolean()).optional(),
+  // 이미지(data URL) 또는 null(삭제). 과도한 용량 방지 위해 상한 설정.
+  equipImage: z.string().max(3_000_000).nullable().optional(),
+  heavenImage: z.string().max(3_000_000).nullable().optional(),
   currentPassword: z.string().optional(),
   newPassword: z.string().min(4, "새 비밀번호는 4자 이상이어야 합니다.").max(200).optional(),
 });
@@ -86,6 +91,8 @@ export async function PATCH(req: NextRequest) {
   if (d.myth1 !== undefined) data.myth1 = d.myth1;
   if (d.myth2 !== undefined) data.myth2 = d.myth2;
   if (d.bossKills !== undefined) data.bossKills = JSON.stringify(d.bossKills);
+  if (d.equipImage !== undefined) data.equipImage = d.equipImage;
+  if (d.heavenImage !== undefined) data.heavenImage = d.heavenImage;
 
   // 비밀번호 변경 시 현재 비밀번호 확인
   if (d.newPassword) {

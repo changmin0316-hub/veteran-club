@@ -34,6 +34,8 @@ export default async function UserPage() {
         myth1: member.myth1,
         myth2: member.myth2,
         bossKills,
+        equipImage: member.equipImage ?? null,
+        heavenImage: member.heavenImage ?? null,
       }}
       bosses={bosses.map((b) => ({ id: b.id, name: b.name }))}
     />

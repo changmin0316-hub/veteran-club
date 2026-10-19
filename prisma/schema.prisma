@@ -37,6 +37,8 @@ model Member {
   myth1        Int      @default(0) // 신화성의
   myth2        Int      @default(0) // 신화사역마
   bossKills    String   @default("{}") // 보스 처치 현황 JSON (명예의전당)
+  equipImage   String? // 장비 이미지 (data URL)
+  heavenImage  String? // 헤븐스톤 이미지 (data URL)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

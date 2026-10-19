@@ -22,7 +22,11 @@ interface Profile {
   myth1: number;
   myth2: number;
   bossKills: Record<string, boolean>;
+  equipImage: string | null;
+  heavenImage: string | null;
 }
+
+type ImgKind = "equipImage" | "heavenImage";
 
 export default function UserClient({
   profile,
@@ -37,54 +41,23 @@ export default function UserClient({
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
-
-  // OCR
-  const [ocrBusy, setOcrBusy] = useState(false);
-  const [ocrProgress, setOcrProgress] = useState(0);
-  const [ocrText, setOcrText] = useState<string | null>(null);
-  const [ocrMsg, setOcrMsg] = useState<string | null>(null);
+  const [imgBusy, setImgBusy] = useState<ImgKind | null>(null);
 
   function set<K extends keyof Profile>(k: K, v: Profile[K]) {
     setForm((f) => ({ ...f, [k]: v }));
   }
 
-  async function handleOcr(file: File) {
-    setOcrBusy(true);
-    setOcrProgress(0);
-    setOcrMsg(null);
-    setOcrText(null);
+  // 이미지 선택 → 리사이즈/압축 후 data URL 저장
+  async function handleImage(kind: ImgKind, file: File) {
+    setImgBusy(kind);
+    setErr(null);
     try {
-      const Tesseract = (await import("tesseract.js")).default;
-      const { data } = await Tesseract.recognize(file, "kor+eng", {
-        logger: (m: { status: string; progress: number }) => {
-          if (m.status === "recognizing text") setOcrProgress(m.progress);
-        },
-      });
-      const text = data.text ?? "";
-      setOcrText(text);
-      const parsed = parseStats(text);
-      const applied: string[] = [];
-      if (parsed.attack != null) {
-        set("attack", parsed.attack);
-        applied.push(`공격 ${parsed.attack}`);
-      }
-      if (parsed.defense != null) {
-        set("defense", parsed.defense);
-        applied.push(`방어 ${parsed.defense}`);
-      }
-      if (parsed.accuracy != null) {
-        set("accuracy", parsed.accuracy);
-        applied.push(`명중 ${parsed.accuracy}`);
-      }
-      setOcrMsg(
-        applied.length
-          ? `인식 완료: ${applied.join(" · ")} (확인 후 저장하세요)`
-          : "숫자를 인식하지 못했습니다. 아래 인식 결과를 참고해 직접 입력하세요."
-      );
+      const dataUrl = await resizeToDataUrl(file, 1000, 0.72);
+      set(kind, dataUrl);
     } catch {
-      setOcrMsg("OCR 처리에 실패했습니다. 다시 시도하거나 직접 입력하세요.");
+      setErr("이미지를 불러오지 못했습니다. 다른 이미지를 시도하세요.");
     } finally {
-      setOcrBusy(false);
+      setImgBusy(null);
     }
   }
 
@@ -108,6 +81,8 @@ export default function UserClient({
         myth1: form.myth1,
         myth2: form.myth2,
         bossKills: form.bossKills,
+        equipImage: form.equipImage,
+        heavenImage: form.heavenImage,
       };
       if (newPassword) {
         payload.newPassword = newPassword;
@@ -166,53 +141,25 @@ export default function UserClient({
           </Field>
         </div>
 
-        {/* OCR 스탯 자동입력 */}
-        <div className="rounded-lg border border-dashed border-sky-200 bg-sky-50/40 p-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <div>
-              <p className="text-sm font-medium text-neutral-700">
-                OCR 스탯 자동입력
-              </p>
-              <p className="text-xs text-neutral-500">
-                캐릭터 스탯 스크린샷을 올리면 공격·방어·명중을 자동 인식합니다.
-              </p>
-            </div>
-            <label className="ml-auto cursor-pointer rounded bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">
-              {ocrBusy ? "인식 중..." : "이미지 선택"}
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                disabled={ocrBusy}
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) handleOcr(f);
-                  e.target.value = "";
-                }}
-              />
-            </label>
+        {/* 이미지 첨부 (장비 / 헤븐스톤) */}
+        <div>
+          <p className="mb-2 text-xs font-semibold text-neutral-500">이미지 첨부</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <ImageSlot
+              label="첨부파일1 · 장비 이미지"
+              value={form.equipImage}
+              busy={imgBusy === "equipImage"}
+              onPick={(f) => handleImage("equipImage", f)}
+              onRemove={() => set("equipImage", null)}
+            />
+            <ImageSlot
+              label="첨부파일2 · 헤븐스톤 이미지"
+              value={form.heavenImage}
+              busy={imgBusy === "heavenImage"}
+              onPick={(f) => handleImage("heavenImage", f)}
+              onRemove={() => set("heavenImage", null)}
+            />
           </div>
-          {ocrBusy && (
-            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-neutral-200">
-              <div
-                className="h-full rounded-full bg-sky-500 transition-all"
-                style={{ width: `${Math.round(ocrProgress * 100)}%` }}
-              />
-            </div>
-          )}
-          {ocrMsg && (
-            <p className="mt-2 text-sm text-sky-700">{ocrMsg}</p>
-          )}
-          {ocrText && (
-            <details className="mt-2">
-              <summary className="cursor-pointer text-xs text-neutral-400">
-                인식 원문 보기
-              </summary>
-              <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap rounded bg-white p-2 text-xs text-neutral-500">
-                {ocrText}
-              </pre>
-            </details>
-          )}
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -336,26 +283,106 @@ function NumField({
 const input =
   "w-full rounded border border-neutral-300 px-3 py-2 text-sm focus:border-sky-400 focus:outline-none";
 
-// OCR 인식 텍스트에서 공격/방어/명중 숫자 추출
-function parseStats(text: string): {
-  attack: number | null;
-  defense: number | null;
-  accuracy: number | null;
-} {
-  const norm = text.replace(/,/g, "").replace(/\s+/g, " ");
-  const pick = (labels: string[]): number | null => {
-    for (const lb of labels) {
-      // 라벨 뒤 또는 라벨 앞의 숫자(2~7자리)를 탐색
-      const after = norm.match(new RegExp(lb + "\\s*[:：]?\\s*(\\d{2,7})"));
-      if (after) return Number(after[1]);
-      const before = norm.match(new RegExp("(\\d{2,7})\\s*" + lb));
-      if (before) return Number(before[1]);
-    }
-    return null;
-  };
-  return {
-    attack: pick(["공격력", "공격", "ATK", "Attack"]),
-    defense: pick(["방어력", "방어", "DEF", "Defense"]),
-    accuracy: pick(["명중률", "명중", "ACC", "Accuracy"]),
-  };
+// 이미지 첨부 슬롯 (미리보기 + 교체/삭제)
+function ImageSlot({
+  label,
+  value,
+  busy,
+  onPick,
+  onRemove,
+}: {
+  label: string;
+  value: string | null;
+  busy: boolean;
+  onPick: (file: File) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="rounded-lg border border-neutral-200 bg-white p-3">
+      <p className="mb-2 text-xs font-medium text-neutral-600">{label}</p>
+      {value ? (
+        <div className="group relative">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={value}
+            alt={label}
+            className="max-h-56 w-full rounded border border-neutral-100 object-contain"
+          />
+          <div className="mt-2 flex gap-2">
+            <label className="flex-1 cursor-pointer rounded border border-neutral-300 bg-neutral-50 px-3 py-1.5 text-center text-xs text-neutral-700 hover:bg-neutral-100">
+              {busy ? "처리 중..." : "이미지 교체"}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                disabled={busy}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) onPick(f);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            <button
+              type="button"
+              onClick={onRemove}
+              disabled={busy}
+              className="rounded border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-600 hover:bg-red-100"
+            >
+              삭제
+            </button>
+          </div>
+        </div>
+      ) : (
+        <label className="flex h-40 cursor-pointer flex-col items-center justify-center rounded border-2 border-dashed border-neutral-300 text-sm text-neutral-400 hover:border-sky-300 hover:text-sky-500">
+          {busy ? "처리 중..." : "+ 이미지 선택"}
+          <span className="mt-1 text-xs text-neutral-300">클릭하여 첨부</span>
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            disabled={busy}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) onPick(f);
+              e.target.value = "";
+            }}
+          />
+        </label>
+      )}
+    </div>
+  );
+}
+
+// 이미지를 최대 변 maxDim 이하로 리사이즈 후 JPEG data URL 로 변환
+function resizeToDataUrl(
+  file: File,
+  maxDim: number,
+  quality: number
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          const scale = maxDim / Math.max(width, height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return reject(new Error("canvas unavailable"));
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = reject;
+      img.src = reader.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
