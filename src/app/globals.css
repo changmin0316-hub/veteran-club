@@ -104,6 +104,22 @@ body.login-bg {
 /* 투명 배경을 의도한 인라인 입력(표 안)은 투명 유지 */
 .dark .bg-transparent { background-color: transparent; }
 
+/* 페이지 서브탭/필터 바를 메인 메뉴 아래에 고정 */
+.subbar-sticky {
+  position: sticky;
+  top: var(--nav-h, 56px);
+  z-index: 20;
+  margin-left: -1rem;
+  margin-right: -1rem;
+  padding: 0.5rem 1rem;
+  background-color: #f5f6f8;
+  border-bottom: 1px solid #e5e7eb;
+}
+.dark .subbar-sticky {
+  background-color: #0f1012;
+  border-bottom-color: #2d2f37;
+}
+
 /* 표 헤더 고정: 표를 내부 스크롤 영역으로 만들고 thead를 상단 고정 */
 .tbl-sticky {
   max-height: 68vh;

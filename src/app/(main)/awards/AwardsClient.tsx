@@ -326,7 +326,7 @@ export default function AwardsClient({
   return (
     <section>
       {/* 뷰 전환 */}
-      <div className="mb-3 flex gap-1.5">
+      <div className="subbar-sticky mb-3 flex gap-1.5">
         <Tab active={view === "items"} onClick={() => setView("items")}>
           낙찰 아이템
         </Tab>

@@ -115,7 +115,8 @@ export default function RequestClient({
 
   return (
     <section>
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="subbar-sticky mb-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <select
           value={eventId ?? ""}
           onChange={(e) => setEventId(Number(e.target.value))}
@@ -136,7 +137,7 @@ export default function RequestClient({
       </div>
 
       {/* 군 필터 */}
-      <div className="mb-3 flex flex-wrap gap-1.5">
+      <div className="mt-2 flex flex-wrap gap-1.5">
         <GuildTab active={guildId === "all"} onClick={() => setGuildId("all")}>
           전체
         </GuildTab>
@@ -149,6 +150,7 @@ export default function RequestClient({
             {g.order}군 - {g.name}
           </GuildTab>
         ))}
+      </div>
       </div>
 
       {msg && (

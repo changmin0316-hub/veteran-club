@@ -88,7 +88,8 @@ export default function AttendanceClient({
 
   return (
     <section>
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="subbar-sticky mb-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="sm:w-72">
           <WeekSelect weeks={weeks} weekId={weekId} onChange={setWeekId} />
         </div>
@@ -115,8 +116,9 @@ export default function AttendanceClient({
         )}
       </div>
 
-      <div className="mb-3">
+      <div className="mt-2">
         <GuildTabs guilds={guilds} guildId={guildId} onChange={setGuildId} />
+      </div>
       </div>
 
       {msg && (

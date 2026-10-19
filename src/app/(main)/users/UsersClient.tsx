@@ -372,7 +372,7 @@ export default function UsersClient({
       )}
 
       {/* 필터 · 검색 · 액션 */}
-      <div className="mb-3 flex flex-wrap items-center gap-2">
+      <div className="subbar-sticky mb-3 flex flex-wrap items-center gap-2">
         <div className="flex flex-wrap gap-1.5">
           <GuildTab active={activeGuild === "all"} onClick={() => setActiveGuild("all")}>
             전체 ({rows.length})
