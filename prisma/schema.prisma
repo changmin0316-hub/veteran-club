@@ -107,6 +107,7 @@ model MonthlyStat {
   attack    Int
   defense   Int
   accuracy  Int
+  itemCollection Float @default(0)
   createdAt DateTime @default(now())
 
   member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)

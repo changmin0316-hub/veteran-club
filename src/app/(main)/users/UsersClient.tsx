@@ -38,6 +38,7 @@ export interface StatDelta {
   defense: number;
   accuracy: number;
   total: number;
+  itemCollection: number;
 }
 export type StatDeltaMap = Record<number, StatDelta | null>;
 
@@ -536,11 +537,13 @@ export default function UsersClient({
                     <>
                       <NumCell
                         value={r.myth1}
+                        width="w-11"
                         disabled={!editable}
                         onChange={(v) => patch(r.id, { myth1: v })}
                       />
                       <NumCell
                         value={r.myth2}
+                        width="w-11"
                         disabled={!editable}
                         onChange={(v) => patch(r.id, { myth2: v })}
                       />
@@ -574,7 +577,8 @@ export default function UsersClient({
                         <DeltaBadge value={deltas[r.id]?.total} />
                       </td>
                       <td className="px-1.5 py-1.5 text-right tabular-nums text-neutral-700">
-                        {r.itemCollection.toFixed(2)}%
+                        <div>{r.itemCollection.toFixed(2)}%</div>
+                        <DeltaBadge value={deltas[r.id]?.itemCollection} pct />
                       </td>
                       <td className="px-1.5 py-1.5">
                         <select
@@ -880,11 +884,13 @@ function NumCell({
   value,
   delta,
   disabled,
+  width = "w-14",
   onChange,
 }: {
   value: number;
   delta?: number;
   disabled: boolean;
+  width?: string;
   onChange: (v: number) => void;
 }) {
   return (
@@ -894,7 +900,7 @@ function NumCell({
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-14 rounded border border-transparent bg-transparent px-1 py-1 text-right text-sm tabular-nums [appearance:textfield] hover:border-neutral-200 focus:border-sky-400 focus:bg-white focus:outline-none disabled:text-neutral-500 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        className={`${width} rounded border border-transparent bg-transparent px-1 py-1 text-right text-sm tabular-nums [appearance:textfield] hover:border-neutral-200 focus:border-sky-400 focus:bg-white focus:outline-none disabled:text-neutral-500 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
       />
       <DeltaBadge value={delta} />
     </td>
@@ -902,16 +908,21 @@ function NumCell({
 }
 
 // 전월 대비 증감 뱃지 (▲상승 / ▼하락 / – 변동없음)
-function DeltaBadge({ value }: { value?: number }) {
+function DeltaBadge({ value, pct }: { value?: number; pct?: boolean }) {
   if (value === undefined || value === null) return null;
-  if (value === 0)
+  // 퍼센트 값(템컬렉)은 소수 2자리 + %p, 정수 스탯은 천단위 구분
+  const rounded = pct ? Math.round(value * 100) / 100 : value;
+  if (rounded === 0)
     return <div className="text-right text-[11px] text-neutral-400">±0</div>;
-  const up = value > 0;
+  const up = rounded > 0;
+  const text = pct
+    ? `${Math.abs(rounded).toFixed(2)}%p`
+    : Math.abs(rounded).toLocaleString();
   return (
     <div
       className={`text-right text-[11px] font-medium ${up ? "text-red-500" : "text-blue-500"}`}
     >
-      {up ? "▲" : "▼"} {Math.abs(value).toLocaleString()}
+      {up ? "▲" : "▼"} {text}
     </div>
   );
 }

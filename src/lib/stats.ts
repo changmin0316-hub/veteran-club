@@ -17,6 +17,7 @@ export interface StatDelta {
   defense: number;
   accuracy: number;
   total: number;
+  itemCollection: number;
 }
 
 /**
@@ -27,7 +28,7 @@ export interface StatDelta {
 export async function ensureMonthlySnapshot(): Promise<void> {
   const ym = ymOf();
   const members = await prisma.member.findMany({
-    select: { id: true, attack: true, defense: true, accuracy: true },
+    select: { id: true, attack: true, defense: true, accuracy: true, itemCollection: true },
   });
   const existing = await prisma.monthlyStat.findMany({
     where: { ym },
@@ -43,6 +44,7 @@ export async function ensureMonthlySnapshot(): Promise<void> {
       attack: m.attack,
       defense: m.defense,
       accuracy: m.accuracy,
+      itemCollection: m.itemCollection,
     })),
   });
 }
@@ -61,7 +63,7 @@ export async function recordMonthlySnapshot(force = false): Promise<number> {
   }
   const ym = ymOf();
   const members = await prisma.member.findMany({
-    select: { id: true, attack: true, defense: true, accuracy: true },
+    select: { id: true, attack: true, defense: true, accuracy: true, itemCollection: true },
   });
   await prisma.$transaction(
     members.map((m) =>
@@ -73,8 +75,14 @@ export async function recordMonthlySnapshot(force = false): Promise<number> {
           attack: m.attack,
           defense: m.defense,
           accuracy: m.accuracy,
+          itemCollection: m.itemCollection,
         },
-        update: { attack: m.attack, defense: m.defense, accuracy: m.accuracy },
+        update: {
+          attack: m.attack,
+          defense: m.defense,
+          accuracy: m.accuracy,
+          itemCollection: m.itemCollection,
+        },
       })
     )
   );
@@ -110,6 +118,7 @@ export async function getStatDeltas(): Promise<Map<number, StatDelta | null>> {
       accuracy: c.accuracy - o.accuracy,
       total:
         c.attack + c.defense + c.accuracy - (o.attack + o.defense + o.accuracy),
+      itemCollection: c.itemCollection - o.itemCollection,
     });
   }
   return result;
