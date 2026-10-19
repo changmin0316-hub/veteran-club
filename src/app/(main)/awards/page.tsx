@@ -94,6 +94,7 @@ export default async function AwardsPage() {
   const donationRows: DonationRow[] = donations.map((d) => ({
     id: d.id,
     itemName: d.itemName,
+    occasion: d.occasion,
     memberId: d.memberId,
     memberName: d.member.name,
     guildId: d.member.guildId,

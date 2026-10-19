@@ -26,6 +26,7 @@ export async function GET() {
 
 const createSchema = z.object({
   itemName: z.string().trim().min(1, "아이템명을 입력하세요.").max(100),
+  occasion: z.string().trim().max(50).optional(),
   memberId: z.number().int().positive("길드원을 선택하세요."),
   quantity: z.number().int().positive("수량은 1개 이상이어야 합니다.").max(100000),
 });
@@ -44,13 +45,13 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
-  const { itemName, memberId, quantity } = parsed.data;
+  const { itemName, occasion, memberId, quantity } = parsed.data;
   const member = await prisma.member.findUnique({ where: { id: memberId } });
   if (!member) {
     return NextResponse.json({ message: "존재하지 않는 길드원입니다." }, { status: 404 });
   }
   const donation = await prisma.donation.create({
-    data: { itemName, memberId, quantity },
+    data: { itemName, occasion: occasion || null, memberId, quantity },
     include: { member: { select: { id: true, name: true, guildId: true } } },
   });
   return NextResponse.json({ donation }, { status: 201 });

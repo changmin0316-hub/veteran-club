@@ -62,6 +62,7 @@ model Member {
 model Donation {
   id        Int      @id @default(autoincrement())
   itemName  String // 기부 아이템명 (예: 고룡의 핏줄)
+  occasion  String? // 날짜/회차 자유 입력 (예: 10월 3일, 1차)
   memberId  Int
   quantity  Int      @default(0) // 기부 수량(개)
   createdAt DateTime @default(now())

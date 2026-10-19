@@ -29,6 +29,7 @@ export interface PayStat {
 export interface DonationRow {
   id: number;
   itemName: string;
+  occasion: string | null;
   memberId: number;
   memberName: string;
   guildId: number | null;
@@ -61,6 +62,7 @@ export default function AwardsClient({
 
   // 길드기부 입력
   const [dItem, setDItem] = useState("");
+  const [dOccasion, setDOccasion] = useState("");
   const [dMember, setDMember] = useState<number | "">("");
   const [dQty, setDQty] = useState("");
   const [dBusy, setDBusy] = useState(false);
@@ -77,7 +79,12 @@ export default function AwardsClient({
       const res = await fetch("/api/donations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itemName: dItem.trim(), memberId: dMember, quantity: qty }),
+        body: JSON.stringify({
+          itemName: dItem.trim(),
+          occasion: dOccasion.trim() || undefined,
+          memberId: dMember,
+          quantity: qty,
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -102,7 +109,10 @@ export default function AwardsClient({
     return donations.filter(
       (d) =>
         (guildId === "all" || d.guildId === guildId) &&
-        (!q || d.memberName.includes(q) || d.itemName.includes(q))
+        (!q ||
+          d.memberName.includes(q) ||
+          d.itemName.includes(q) ||
+          (d.occasion ?? "").includes(q))
     );
   }, [donations, guildId, search]);
 
@@ -400,12 +410,21 @@ export default function AwardsClient({
           <div className="rounded-lg border border-neutral-200 bg-white p-4">
             <p className="mb-2 text-sm font-semibold text-neutral-700">기부 등록</p>
             <div className="flex flex-wrap items-end gap-2">
-              <div className="flex-1 min-w-[160px]">
+              <div className="flex-1 min-w-[150px]">
                 <label className="mb-1 block text-xs text-neutral-500">아이템명</label>
                 <input
                   value={dItem}
                   onChange={(e) => setDItem(e.target.value)}
                   placeholder="예) 고룡의 핏줄"
+                  className="w-full rounded border border-neutral-300 px-3 py-1.5 text-sm focus:border-sky-400 focus:outline-none"
+                />
+              </div>
+              <div className="w-28">
+                <label className="mb-1 block text-xs text-neutral-500">날짜/회차</label>
+                <input
+                  value={dOccasion}
+                  onChange={(e) => setDOccasion(e.target.value)}
+                  placeholder="예) 10월3일 · 1차"
                   className="w-full rounded border border-neutral-300 px-3 py-1.5 text-sm focus:border-sky-400 focus:outline-none"
                 />
               </div>
@@ -473,6 +492,11 @@ export default function AwardsClient({
                         key={r.id}
                         className="inline-flex items-center gap-1.5 rounded bg-neutral-100 px-2 py-1 text-xs text-neutral-700"
                       >
+                        {r.occasion && (
+                          <span className="rounded bg-white px-1.5 py-0.5 text-[11px] text-neutral-500 ring-1 ring-neutral-200">
+                            {r.occasion}
+                          </span>
+                        )}
                         <span className="font-medium">{r.memberName}</span>
                         <span className="tabular-nums">{r.quantity.toLocaleString()}개</span>
                         <button
