@@ -58,9 +58,7 @@ export default function AwardsClient({
   members: MemberOpt[];
 }) {
   const router = useRouter();
-  const [view, setView] = useState<
-    "items" | "pay" | "donate" | "payout"
-  >("items");
+  const [view, setView] = useState<"items" | "pay" | "gift">("items");
   const [guildId, setGuildId] = useState<number | "all">("all");
   const [category, setCategory] = useState<string>("all");
   const [search, setSearch] = useState("");
@@ -135,39 +133,6 @@ export default function AwardsClient({
       .sort((a, b) => b.total - a.total);
   }, [donateFiltered]);
 
-  // 길드원별 총 기부 통계 (아이템별 내역 포함)
-  const donateByMember = useMemo(() => {
-    const map = new Map<
-      number,
-      {
-        name: string;
-        guildId: number | null;
-        total: number;
-        items: Map<string, number>;
-      }
-    >();
-    for (const d of donateFiltered) {
-      if (!map.has(d.memberId))
-        map.set(d.memberId, {
-          name: d.memberName,
-          guildId: d.guildId,
-          total: 0,
-          items: new Map(),
-        });
-      const e = map.get(d.memberId)!;
-      e.total += d.quantity;
-      e.items.set(d.itemName, (e.items.get(d.itemName) ?? 0) + d.quantity);
-    }
-    return [...map.values()]
-      .map((v) => ({
-        ...v,
-        items: [...v.items.entries()]
-          .map(([itemName, qty]) => ({ itemName, qty }))
-          .sort((a, b) => b.qty - a.qty),
-      }))
-      .sort((a, b) => b.total - a.total);
-  }, [donateFiltered]);
-
   const donateTotal = useMemo(
     () => donateFiltered.reduce((s, d) => s + d.quantity, 0),
     [donateFiltered]
@@ -232,37 +197,59 @@ export default function AwardsClient({
       .sort((a, b) => b.total - a.total);
   }, [payoutFiltered]);
 
-  const payoutByMember = useMemo(() => {
-    const map = new Map<
-      number,
-      { name: string; guildId: number | null; total: number; items: Map<string, number> }
-    >();
-    for (const d of payoutFiltered) {
-      if (!map.has(d.memberId))
-        map.set(d.memberId, {
-          name: d.memberName,
-          guildId: d.guildId,
-          total: 0,
-          items: new Map(),
-        });
-      const e = map.get(d.memberId)!;
-      e.total += d.quantity;
-      e.items.set(d.itemName, (e.items.get(d.itemName) ?? 0) + d.quantity);
-    }
-    return [...map.values()]
-      .map((v) => ({
-        ...v,
-        items: [...v.items.entries()]
-          .map(([itemName, qty]) => ({ itemName, qty }))
-          .sort((a, b) => b.qty - a.qty),
-      }))
-      .sort((a, b) => b.total - a.total);
-  }, [payoutFiltered]);
-
   const payoutTotal = useMemo(
     () => payoutFiltered.reduce((s, d) => s + d.quantity, 0),
     [payoutFiltered]
   );
+
+  // 기부 + 지급 통합 길드원별 통계 (아이템별 총 수량만)
+  const giftByMember = useMemo(() => {
+    type Row = {
+      memberId: number;
+      name: string;
+      guildId: number | null;
+      donate: Map<string, number>;
+      payout: Map<string, number>;
+      order: number; // 정렬용 합계(기부+지급), 표시는 안 함
+    };
+    const map = new Map<number, Row>();
+    const ensure = (d: DonationRow) => {
+      if (!map.has(d.memberId))
+        map.set(d.memberId, {
+          memberId: d.memberId,
+          name: d.memberName,
+          guildId: d.guildId,
+          donate: new Map(),
+          payout: new Map(),
+          order: 0,
+        });
+      return map.get(d.memberId)!;
+    };
+    for (const d of donateFiltered) {
+      const r = ensure(d);
+      r.donate.set(d.itemName, (r.donate.get(d.itemName) ?? 0) + d.quantity);
+      r.order += d.quantity;
+    }
+    for (const d of payoutFiltered) {
+      const r = ensure(d);
+      r.payout.set(d.itemName, (r.payout.get(d.itemName) ?? 0) + d.quantity);
+      r.order += d.quantity;
+    }
+    const toItems = (m: Map<string, number>) =>
+      [...m.entries()]
+        .map(([itemName, qty]) => ({ itemName, qty }))
+        .sort((a, b) => b.qty - a.qty);
+    return [...map.values()]
+      .map((r) => ({
+        memberId: r.memberId,
+        name: r.name,
+        guildId: r.guildId,
+        donate: toItems(r.donate),
+        payout: toItems(r.payout),
+        order: r.order,
+      }))
+      .sort((a, b) => b.order - a.order);
+  }, [donateFiltered, payoutFiltered]);
 
   const payFiltered = useMemo(() => {
     const q = search.trim();
@@ -329,11 +316,8 @@ export default function AwardsClient({
         <Tab active={view === "pay"} onClick={() => setView("pay")}>
           분배금 통계
         </Tab>
-        <Tab active={view === "donate"} onClick={() => setView("donate")}>
-          길드기부 통계
-        </Tab>
-        <Tab active={view === "payout"} onClick={() => setView("payout")}>
-          지급 통계
+        <Tab active={view === "gift"} onClick={() => setView("gift")}>
+          기부/지급 통계
         </Tab>
       </div>
 
@@ -375,29 +359,12 @@ export default function AwardsClient({
             tone="amber"
           />
         </div>
-      ) : view === "donate" ? (
-        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <Card label="총 기부 수량" value={`${donateTotal.toLocaleString()}개`} tone="sky" />
-          <Card label="기부 품목" value={`${donateByItem.length}종`} />
-          <Card label="기부 인원" value={`${donateByMember.length}명`} />
-          <Card
-            label="최다 기부자"
-            value={donateByMember[0]?.name ?? "-"}
-            sub={donateByMember[0] ? `${donateByMember[0].total.toLocaleString()}개` : undefined}
-            tone="amber"
-          />
-        </div>
       ) : (
         <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <Card label="총 지급 수량" value={`${payoutTotal.toLocaleString()}개`} tone="sky" />
+          <Card label="총 기부 수량" value={`${donateTotal.toLocaleString()}개`} tone="sky" />
+          <Card label="총 지급 수량" value={`${payoutTotal.toLocaleString()}개`} tone="emerald" />
+          <Card label="기부 품목" value={`${donateByItem.length}종`} />
           <Card label="지급 품목" value={`${payoutByItem.length}종`} />
-          <Card label="지급 인원" value={`${payoutByMember.length}명`} />
-          <Card
-            label="최다 수령"
-            value={payoutByMember[0]?.name ?? "-"}
-            sub={payoutByMember[0] ? `${payoutByMember[0].total.toLocaleString()}개` : undefined}
-            tone="amber"
-          />
         </div>
       )}
 
@@ -536,12 +503,12 @@ export default function AwardsClient({
         </div>
         ))}
 
-      {/* 길드기부 통계 */}
-      {view === "donate" && (
+      {/* 기부/지급 통계 (통합) */}
+      {view === "gift" && (
         <div className="grid gap-4">
-          {/* 입력 폼 */}
-          <div className="rounded-lg border border-neutral-200 bg-white p-4">
-            <p className="mb-2 text-sm font-semibold text-neutral-700">기부 등록</p>
+          {/* 기부 입력 폼 */}
+          <div className="rounded-lg border border-sky-200 bg-sky-50/40 p-4">
+            <p className="mb-2 text-sm font-semibold text-sky-700">기부 등록</p>
             <div className="flex flex-wrap items-end gap-2">
               <div className="flex-1 min-w-[150px]">
                 <label className="mb-1 block text-xs text-neutral-500">아이템명</label>
@@ -647,71 +614,9 @@ export default function AwardsClient({
             </div>
           )}
 
-          {/* 전체 기부 통계 (길드원별) */}
-          {donateByMember.length > 0 && (
-            <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
-              <div className="border-b border-neutral-100 px-4 py-2.5 text-sm font-semibold text-neutral-700">
-                전체 기부 통계 (길드원별)
-              </div>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-neutral-200 bg-neutral-50 text-neutral-600">
-                    <th className="px-3 py-2.5 text-left font-semibold">순위</th>
-                    <th className="px-3 py-2.5 text-left font-semibold">길드원</th>
-                    <th className="px-3 py-2.5 text-left font-semibold">소속</th>
-                    <th className="px-3 py-2.5 text-left font-semibold">아이템별 내역</th>
-                    <th className="px-3 py-2.5 text-right font-semibold">총 기부 수량</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {donateByMember.map((m, i) => (
-                    <tr key={m.name} className="border-b border-neutral-50 align-top">
-                      <td className="px-3 py-2 text-neutral-400">{i + 1}</td>
-                      <td className="px-3 py-2 font-medium">{m.name}</td>
-                      <td className="px-3 py-2 text-neutral-500">{guildName(m.guildId)}</td>
-                      <td className="px-3 py-2">
-                        <div className="flex flex-wrap gap-1">
-                          {m.items.map((it) => (
-                            <span
-                              key={it.itemName}
-                              className="inline-flex items-center gap-1 rounded bg-neutral-100 px-2 py-0.5 text-xs text-neutral-700"
-                            >
-                              <span>{it.itemName}</span>
-                              <span className="font-semibold tabular-nums text-sky-700">
-                                {it.qty.toLocaleString()}개
-                              </span>
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-3 py-2 text-right font-semibold text-sky-700">
-                        {m.total.toLocaleString()}개
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="bg-neutral-50 font-semibold">
-                    <td className="px-3 py-2" colSpan={4}>
-                      합계
-                    </td>
-                    <td className="px-3 py-2 text-right text-sky-700">
-                      {donateTotal.toLocaleString()}개
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* 지급 통계 */}
-      {view === "payout" && (
-        <div className="grid gap-4">
-          {/* 입력 폼 */}
-          <div className="rounded-lg border border-neutral-200 bg-white p-4">
-            <p className="mb-2 text-sm font-semibold text-neutral-700">지급 등록</p>
+          {/* 지급 입력 폼 */}
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-4">
+            <p className="mb-2 text-sm font-semibold text-emerald-700">지급 등록</p>
             <div className="flex flex-wrap items-end gap-2">
               <div className="flex-1 min-w-[150px]">
                 <label className="mb-1 block text-xs text-neutral-500">아이템명</label>
@@ -803,11 +708,11 @@ export default function AwardsClient({
             </div>
           )}
 
-          {/* 전체 지급 통계 (길드원별) */}
-          {payoutByMember.length > 0 && (
+          {/* 전체 통계 (길드원별) - 기부/지급 통합, 아이템별 총 수량 */}
+          {giftByMember.length > 0 && (
             <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
               <div className="border-b border-neutral-100 px-4 py-2.5 text-sm font-semibold text-neutral-700">
-                전체 지급 통계 (길드원별)
+                전체 통계 (길드원별)
               </div>
               <table className="w-full text-sm">
                 <thead>
@@ -815,53 +720,62 @@ export default function AwardsClient({
                     <th className="px-3 py-2.5 text-left font-semibold">순위</th>
                     <th className="px-3 py-2.5 text-left font-semibold">길드원</th>
                     <th className="px-3 py-2.5 text-left font-semibold">소속</th>
-                    <th className="px-3 py-2.5 text-left font-semibold">아이템별 내역</th>
-                    <th className="px-3 py-2.5 text-right font-semibold">총 지급 수량</th>
+                    <th className="px-3 py-2.5 text-left font-semibold text-sky-700">
+                      기부 (아이템별)
+                    </th>
+                    <th className="px-3 py-2.5 text-left font-semibold text-emerald-700">
+                      지급 (아이템별)
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {payoutByMember.map((m, i) => (
-                    <tr key={m.name} className="border-b border-neutral-50 align-top">
+                  {giftByMember.map((m, i) => (
+                    <tr key={m.memberId} className="border-b border-neutral-50 align-top">
                       <td className="px-3 py-2 text-neutral-400">{i + 1}</td>
                       <td className="px-3 py-2 font-medium">{m.name}</td>
                       <td className="px-3 py-2 text-neutral-500">{guildName(m.guildId)}</td>
                       <td className="px-3 py-2">
-                        <div className="flex flex-wrap gap-1">
-                          {m.items.map((it) => (
-                            <span
-                              key={it.itemName}
-                              className="inline-flex items-center gap-1 rounded bg-neutral-100 px-2 py-0.5 text-xs text-neutral-700"
-                            >
-                              <span>{it.itemName}</span>
-                              <span className="font-semibold tabular-nums text-emerald-700">
-                                {it.qty.toLocaleString()}개
-                              </span>
-                            </span>
-                          ))}
-                        </div>
+                        <ItemChips items={m.donate} tone="sky" />
                       </td>
-                      <td className="px-3 py-2 text-right font-semibold text-emerald-700">
-                        {m.total.toLocaleString()}개
+                      <td className="px-3 py-2">
+                        <ItemChips items={m.payout} tone="emerald" />
                       </td>
                     </tr>
                   ))}
                 </tbody>
-                <tfoot>
-                  <tr className="bg-neutral-50 font-semibold">
-                    <td className="px-3 py-2" colSpan={4}>
-                      합계
-                    </td>
-                    <td className="px-3 py-2 text-right text-emerald-700">
-                      {payoutTotal.toLocaleString()}개
-                    </td>
-                  </tr>
-                </tfoot>
               </table>
             </div>
           )}
         </div>
       )}
     </section>
+  );
+}
+
+function ItemChips({
+  items,
+  tone,
+}: {
+  items: { itemName: string; qty: number }[];
+  tone: "sky" | "emerald";
+}) {
+  if (items.length === 0)
+    return <span className="text-xs text-neutral-300">-</span>;
+  const qtyCls = tone === "sky" ? "text-sky-700" : "text-emerald-700";
+  return (
+    <div className="flex flex-wrap gap-1">
+      {items.map((it) => (
+        <span
+          key={it.itemName}
+          className="inline-flex items-center gap-1 rounded bg-neutral-100 px-2 py-0.5 text-xs text-neutral-700"
+        >
+          <span>{it.itemName}</span>
+          <span className={`font-semibold tabular-nums ${qtyCls}`}>
+            {it.qty.toLocaleString()}개
+          </span>
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -874,14 +788,16 @@ function Card({
   label: string;
   value: string;
   sub?: string;
-  tone?: "neutral" | "sky" | "amber";
+  tone?: "neutral" | "sky" | "amber" | "emerald";
 }) {
   const cls =
     tone === "sky"
       ? "border-sky-200 bg-sky-50"
       : tone === "amber"
         ? "border-amber-200 bg-amber-50"
-        : "border-neutral-200 bg-white";
+        : tone === "emerald"
+          ? "border-emerald-200 bg-emerald-50"
+          : "border-neutral-200 bg-white";
   return (
     <div className={`rounded-lg border ${cls} px-4 py-3`}>
       <p className="text-xs text-neutral-500">{label}</p>
