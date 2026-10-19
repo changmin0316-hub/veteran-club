@@ -79,12 +79,9 @@ export default function ConfigClient({
         {/* 주차 */}
         <Panel title="주차">
           <AddRow
-            placeholder="주차 번호 ex) 16"
-            numeric
+            placeholder="주차 이름 ex) 10월 3주차 - 쟁"
             onAdd={async (val) => {
-              const d = await api("/api/weeks", "POST", {
-                number: Number(val),
-              });
+              const d = await api("/api/weeks", "POST", { name: val });
               setWeeks((w) =>
                 [
                   { id: d.week.id, number: d.week.number, name: d.week.name },

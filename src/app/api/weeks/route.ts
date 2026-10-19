@@ -22,8 +22,9 @@ export async function GET() {
 }
 
 const createSchema = z.object({
-  number: z.number().int().positive(),
-  name: z.string().trim().max(50).optional(),
+  // 이름은 자유 텍스트(예: "10월 3주차 - 쟁"). 순번(number)은 서버가 자동 부여.
+  name: z.string().trim().min(1, "주차 이름을 입력하세요.").max(100),
+  number: z.number().int().positive().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -35,19 +36,24 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ message: "주차 번호를 확인하세요." }, { status: 400 });
+    return NextResponse.json(
+      { message: parsed.error.issues[0]?.message ?? "입력값을 확인하세요." },
+      { status: 400 }
+    );
   }
-  const dup = await prisma.week.findUnique({
-    where: { number: parsed.data.number },
-  });
-  if (dup) {
-    return NextResponse.json({ message: "이미 있는 주차입니다." }, { status: 409 });
+  // 순번(number)은 지정값이 없으면 기존 최대값 +1 로 자동 부여(정렬/고유키용).
+  let number = parsed.data.number;
+  if (number == null) {
+    const max = await prisma.week.aggregate({ _max: { number: true } });
+    number = (max._max.number ?? 0) + 1;
+  } else {
+    const dup = await prisma.week.findUnique({ where: { number } });
+    if (dup) {
+      return NextResponse.json({ message: "이미 있는 순번입니다." }, { status: 409 });
+    }
   }
   const week = await prisma.week.create({
-    data: {
-      number: parsed.data.number,
-      name: parsed.data.name ?? `${parsed.data.number}주차`,
-    },
+    data: { number, name: parsed.data.name },
   });
   return NextResponse.json({ week }, { status: 201 });
 }
