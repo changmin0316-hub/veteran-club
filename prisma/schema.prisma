@@ -6,9 +6,9 @@ generator client {
 }
 
 datasource db {
-  // 개발: sqlite / 운영: postgresql 로 변경 후 `npx prisma migrate deploy`(또는 db push).
-  // 스키마는 두 DB 모두와 호환되는 타입만 사용(String/Int/Boolean/DateTime).
-  provider = "sqlite"
+  // 운영: postgresql. 로컬에서 SQLite로 개발하려면 provider를 "sqlite"로,
+  // DATABASE_URL을 file:./dev.db로 바꾸면 됩니다(스키마는 두 DB 모두 호환).
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
