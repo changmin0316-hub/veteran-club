@@ -53,8 +53,23 @@ model Member {
   wonItems     EventItem[]           @relation("ItemWinner")
   monthlyStats MonthlyStat[]
   extraPays    ExtraPay[]
+  donations    Donation[]
 
   @@index([guildId])
+}
+
+// 길드 기부 내역: 아이템명 + 기부한 길드원 + 수량
+model Donation {
+  id        Int      @id @default(autoincrement())
+  itemName  String // 기부 아이템명 (예: 고룡의 핏줄)
+  memberId  Int
+  quantity  Int      @default(0) // 기부 수량(개)
+  createdAt DateTime @default(now())
+
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
+  @@index([itemName])
 }
 
 /// 주차(시즌)

@@ -5,6 +5,8 @@ import AwardsClient, {
   type Award,
   type GuildOpt,
   type PayStat,
+  type DonationRow,
+  type MemberOpt,
 } from "./AwardsClient";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +14,7 @@ export const dynamic = "force-dynamic";
 export default async function AwardsPage() {
   await requireManagerPage();
 
-  const [awarded, guilds, weeks] = await Promise.all([
+  const [awarded, guilds, weeks, donations, members] = await Promise.all([
     prisma.eventItem.findMany({
       where: { winnerId: { not: null } },
       include: {
@@ -24,6 +26,14 @@ export default async function AwardsPage() {
     }),
     prisma.guild.findMany({ orderBy: { order: "asc" } }),
     prisma.week.findMany({ orderBy: { number: "desc" } }),
+    prisma.donation.findMany({
+      include: { member: { select: { id: true, name: true, guildId: true } } },
+      orderBy: { id: "desc" },
+    }),
+    prisma.member.findMany({
+      select: { id: true, name: true, guildId: true },
+      orderBy: [{ role: "desc" }, { name: "asc" }],
+    }),
   ]);
 
   // 주차별 분배금 집계 (길드원별 합계)
@@ -81,5 +91,28 @@ export default async function AwardsPage() {
     name: g.name,
   }));
 
-  return <AwardsClient awards={awards} guilds={guildOpts} payStats={payStats} />;
+  const donationRows: DonationRow[] = donations.map((d) => ({
+    id: d.id,
+    itemName: d.itemName,
+    memberId: d.memberId,
+    memberName: d.member.name,
+    guildId: d.member.guildId,
+    quantity: d.quantity,
+  }));
+
+  const memberOpts: MemberOpt[] = members.map((m) => ({
+    id: m.id,
+    name: m.name,
+    guildId: m.guildId,
+  }));
+
+  return (
+    <AwardsClient
+      awards={awards}
+      guilds={guildOpts}
+      payStats={payStats}
+      donations={donationRows}
+      members={memberOpts}
+    />
+  );
 }

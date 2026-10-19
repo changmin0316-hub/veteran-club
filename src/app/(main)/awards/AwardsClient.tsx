@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export interface Award {
   eventItemId: number;
@@ -25,20 +26,115 @@ export interface PayStat {
   total: number;
   weeks: { label: string; share: number }[];
 }
+export interface DonationRow {
+  id: number;
+  itemName: string;
+  memberId: number;
+  memberName: string;
+  guildId: number | null;
+  quantity: number;
+}
+export interface MemberOpt {
+  id: number;
+  name: string;
+  guildId: number | null;
+}
 
 export default function AwardsClient({
   awards,
   guilds,
   payStats,
+  donations,
+  members,
 }: {
   awards: Award[];
   guilds: GuildOpt[];
   payStats: PayStat[];
+  donations: DonationRow[];
+  members: MemberOpt[];
 }) {
-  const [view, setView] = useState<"items" | "pay">("items");
+  const router = useRouter();
+  const [view, setView] = useState<"items" | "pay" | "donate">("items");
   const [guildId, setGuildId] = useState<number | "all">("all");
   const [category, setCategory] = useState<string>("all");
   const [search, setSearch] = useState("");
+
+  // 길드기부 입력
+  const [dItem, setDItem] = useState("");
+  const [dMember, setDMember] = useState<number | "">("");
+  const [dQty, setDQty] = useState("");
+  const [dBusy, setDBusy] = useState(false);
+  const [dErr, setDErr] = useState("");
+
+  async function addDonation() {
+    setDErr("");
+    const qty = Number(dQty);
+    if (!dItem.trim()) return setDErr("아이템명을 입력하세요.");
+    if (!dMember) return setDErr("길드원을 선택하세요.");
+    if (!Number.isInteger(qty) || qty <= 0) return setDErr("수량을 확인하세요.");
+    setDBusy(true);
+    try {
+      const res = await fetch("/api/donations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemName: dItem.trim(), memberId: dMember, quantity: qty }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setDErr(data?.message ?? "등록에 실패했습니다.");
+        return;
+      }
+      setDQty("");
+      router.refresh();
+    } finally {
+      setDBusy(false);
+    }
+  }
+
+  async function removeDonation(id: number) {
+    const res = await fetch(`/api/donations/${id}`, { method: "DELETE" });
+    if (res.ok) router.refresh();
+  }
+
+  // 길드기부 필터 (소속/검색)
+  const donateFiltered = useMemo(() => {
+    const q = search.trim();
+    return donations.filter(
+      (d) =>
+        (guildId === "all" || d.guildId === guildId) &&
+        (!q || d.memberName.includes(q) || d.itemName.includes(q))
+    );
+  }, [donations, guildId, search]);
+
+  // 아이템별 그룹
+  const donateByItem = useMemo(() => {
+    const map = new Map<string, { total: number; rows: DonationRow[] }>();
+    for (const d of donateFiltered) {
+      if (!map.has(d.itemName)) map.set(d.itemName, { total: 0, rows: [] });
+      const e = map.get(d.itemName)!;
+      e.total += d.quantity;
+      e.rows.push(d);
+    }
+    return [...map.entries()]
+      .map(([itemName, v]) => ({ itemName, ...v }))
+      .sort((a, b) => b.total - a.total);
+  }, [donateFiltered]);
+
+  // 길드원별 총 기부 통계
+  const donateByMember = useMemo(() => {
+    const map = new Map<number, { name: string; guildId: number | null; total: number }>();
+    for (const d of donateFiltered) {
+      if (!map.has(d.memberId))
+        map.set(d.memberId, { name: d.memberName, guildId: d.guildId, total: 0 });
+      map.get(d.memberId)!.total += d.quantity;
+    }
+    return [...map.values()].sort((a, b) => b.total - a.total);
+  }, [donateFiltered]);
+
+  const donateTotal = useMemo(
+    () => donateFiltered.reduce((s, d) => s + d.quantity, 0),
+    [donateFiltered]
+  );
 
   const payFiltered = useMemo(() => {
     const q = search.trim();
@@ -105,6 +201,9 @@ export default function AwardsClient({
         <Tab active={view === "pay"} onClick={() => setView("pay")}>
           분배금 통계
         </Tab>
+        <Tab active={view === "donate"} onClick={() => setView("donate")}>
+          길드기부 통계
+        </Tab>
       </div>
 
       {/* 요약 */}
@@ -130,7 +229,7 @@ export default function AwardsClient({
             tone="amber"
           />
         </div>
-      ) : (
+      ) : view === "pay" ? (
         <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
           <Card label="총 분배금" value={`${payTotal.toLocaleString()}원`} tone="sky" />
           <Card label="수령 인원" value={`${payFiltered.length}명`} />
@@ -142,6 +241,18 @@ export default function AwardsClient({
             label="최다 수령"
             value={payFiltered[0]?.name ?? "-"}
             sub={payFiltered[0] ? `${payFiltered[0].total.toLocaleString()}원` : undefined}
+            tone="amber"
+          />
+        </div>
+      ) : (
+        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <Card label="총 기부 수량" value={`${donateTotal.toLocaleString()}개`} tone="sky" />
+          <Card label="기부 품목" value={`${donateByItem.length}종`} />
+          <Card label="기부 인원" value={`${donateByMember.length}명`} />
+          <Card
+            label="최다 기부자"
+            value={donateByMember[0]?.name ?? "-"}
+            sub={donateByMember[0] ? `${donateByMember[0].total.toLocaleString()}개` : undefined}
             tone="amber"
           />
         </div>
@@ -281,6 +392,146 @@ export default function AwardsClient({
           ))}
         </div>
         ))}
+
+      {/* 길드기부 통계 */}
+      {view === "donate" && (
+        <div className="grid gap-4">
+          {/* 입력 폼 */}
+          <div className="rounded-lg border border-neutral-200 bg-white p-4">
+            <p className="mb-2 text-sm font-semibold text-neutral-700">기부 등록</p>
+            <div className="flex flex-wrap items-end gap-2">
+              <div className="flex-1 min-w-[160px]">
+                <label className="mb-1 block text-xs text-neutral-500">아이템명</label>
+                <input
+                  value={dItem}
+                  onChange={(e) => setDItem(e.target.value)}
+                  placeholder="예) 고룡의 핏줄"
+                  className="w-full rounded border border-neutral-300 px-3 py-1.5 text-sm focus:border-sky-400 focus:outline-none"
+                />
+              </div>
+              <div className="min-w-[130px]">
+                <label className="mb-1 block text-xs text-neutral-500">캐릭명</label>
+                <select
+                  value={dMember}
+                  onChange={(e) => setDMember(e.target.value ? Number(e.target.value) : "")}
+                  className="w-full rounded border border-neutral-300 px-2.5 py-1.5 text-sm focus:border-sky-400 focus:outline-none"
+                >
+                  <option value="">선택</option>
+                  {members.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="w-24">
+                <label className="mb-1 block text-xs text-neutral-500">수량(개)</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={dQty}
+                  onChange={(e) => setDQty(e.target.value)}
+                  placeholder="10"
+                  className="w-full rounded border border-neutral-300 px-3 py-1.5 text-sm tabular-nums focus:border-sky-400 focus:outline-none"
+                />
+              </div>
+              <button
+                onClick={addDonation}
+                disabled={dBusy}
+                className="rounded bg-sky-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-50"
+              >
+                추가
+              </button>
+            </div>
+            {dErr && <p className="mt-2 text-xs text-red-500">{dErr}</p>}
+            <p className="mt-2 text-[11px] text-neutral-400">
+              같은 아이템은 아이템명을 동일하게 입력하면 자동으로 묶여서 집계됩니다.
+            </p>
+          </div>
+
+          {/* 아이템별 기부 내역 */}
+          {donateByItem.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-neutral-300 bg-white py-10 text-center text-sm text-neutral-400">
+              기부 내역이 없습니다.
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {donateByItem.map((it) => (
+                <div
+                  key={it.itemName}
+                  className="rounded-lg border border-neutral-200 bg-white p-4"
+                >
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="font-semibold">{it.itemName}</span>
+                    <span className="ml-auto rounded bg-sky-100 px-2.5 py-0.5 text-xs font-medium text-sky-700">
+                      총 {it.total.toLocaleString()}개
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {it.rows.map((r) => (
+                      <span
+                        key={r.id}
+                        className="inline-flex items-center gap-1.5 rounded bg-neutral-100 px-2 py-1 text-xs text-neutral-700"
+                      >
+                        <span className="font-medium">{r.memberName}</span>
+                        <span className="tabular-nums">{r.quantity.toLocaleString()}개</span>
+                        <button
+                          onClick={() => removeDonation(r.id)}
+                          className="text-neutral-400 hover:text-red-500"
+                          title="삭제"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* 전체 기부 통계 (길드원별) */}
+          {donateByMember.length > 0 && (
+            <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
+              <div className="border-b border-neutral-100 px-4 py-2.5 text-sm font-semibold text-neutral-700">
+                전체 기부 통계 (길드원별)
+              </div>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-neutral-200 bg-neutral-50 text-neutral-600">
+                    <th className="px-3 py-2.5 text-left font-semibold">순위</th>
+                    <th className="px-3 py-2.5 text-left font-semibold">길드원</th>
+                    <th className="px-3 py-2.5 text-left font-semibold">소속</th>
+                    <th className="px-3 py-2.5 text-right font-semibold">총 기부 수량</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {donateByMember.map((m, i) => (
+                    <tr key={m.name} className="border-b border-neutral-50">
+                      <td className="px-3 py-2 text-neutral-400">{i + 1}</td>
+                      <td className="px-3 py-2 font-medium">{m.name}</td>
+                      <td className="px-3 py-2 text-neutral-500">{guildName(m.guildId)}</td>
+                      <td className="px-3 py-2 text-right font-semibold text-sky-700">
+                        {m.total.toLocaleString()}개
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-neutral-50 font-semibold">
+                    <td className="px-3 py-2" colSpan={3}>
+                      합계
+                    </td>
+                    <td className="px-3 py-2 text-right text-sky-700">
+                      {donateTotal.toLocaleString()}개
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }
