@@ -421,8 +421,12 @@ export default function UsersClient({
               ))}
               {isManager && (
                 <>
-                  <Th right>신화성의</Th>
-                  <Th right>신화사역마</Th>
+                  <th className="px-1 py-2.5 text-right text-[11px] font-semibold leading-tight text-neutral-500">
+                    신화<br />성의
+                  </th>
+                  <th className="px-1 py-2.5 text-right text-[11px] font-semibold leading-tight text-neutral-500">
+                    신화<br />사역마
+                  </th>
                   <Th right>쟁탈전</Th>
                   <SortTh label="공격" k="attack" sort={sort} onSort={toggleSort} />
                   <SortTh label="방어" k="defense" sort={sort} onSort={toggleSort} />
@@ -537,13 +541,13 @@ export default function UsersClient({
                     <>
                       <NumCell
                         value={r.myth1}
-                        width="w-11"
+                        width="w-9"
                         disabled={!editable}
                         onChange={(v) => patch(r.id, { myth1: v })}
                       />
                       <NumCell
                         value={r.myth2}
-                        width="w-11"
+                        width="w-9"
                         disabled={!editable}
                         onChange={(v) => patch(r.id, { myth2: v })}
                       />
