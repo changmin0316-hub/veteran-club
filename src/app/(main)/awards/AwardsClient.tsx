@@ -3,6 +3,23 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
+// 회차/날짜(1차·2차·3차 등)별 색상 구분 팔레트 (같은 값은 항상 같은 색)
+const OCCASION_PALETTE = [
+  "bg-sky-500/15 text-sky-300 ring-sky-500/40",
+  "bg-amber-500/15 text-amber-300 ring-amber-500/40",
+  "bg-emerald-500/15 text-emerald-300 ring-emerald-500/40",
+  "bg-violet-500/15 text-violet-300 ring-violet-500/40",
+  "bg-rose-500/15 text-rose-300 ring-rose-500/40",
+  "bg-cyan-500/15 text-cyan-300 ring-cyan-500/40",
+  "bg-fuchsia-500/15 text-fuchsia-300 ring-fuchsia-500/40",
+  "bg-lime-500/15 text-lime-300 ring-lime-500/40",
+];
+function occasionClass(s: string): string {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return OCCASION_PALETTE[h % OCCASION_PALETTE.length];
+}
+
 export interface Award {
   eventItemId: number;
   itemName: string;
@@ -593,7 +610,9 @@ export default function AwardsClient({
                         className="inline-flex items-center gap-1.5 rounded bg-neutral-100 px-2 py-1 text-xs text-neutral-700"
                       >
                         {r.occasion && (
-                          <span className="rounded bg-white px-1.5 py-0.5 text-[11px] text-neutral-500 ring-1 ring-neutral-200">
+                          <span
+                            className={`rounded px-1.5 py-0.5 text-[11px] font-medium ring-1 ${occasionClass(r.occasion)}`}
+                          >
                             {r.occasion}
                           </span>
                         )}
