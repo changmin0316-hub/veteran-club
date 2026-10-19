@@ -54,6 +54,7 @@ model Member {
   monthlyStats MonthlyStat[]
   extraPays    ExtraPay[]
   donations    Donation[]
+  payouts      Payout[]
 
   @@index([guildId])
 }
@@ -65,6 +66,21 @@ model Donation {
   occasion  String? // 날짜/회차 자유 입력 (예: 10월 3일, 1차)
   memberId  Int
   quantity  Int      @default(0) // 기부 수량(개)
+  createdAt DateTime @default(now())
+
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
+  @@index([itemName])
+}
+
+// 기부 아이템 지급(분배) 내역: 아이템명 + 지급받은 길드원 + 수량
+model Payout {
+  id        Int      @id @default(autoincrement())
+  itemName  String // 지급 아이템명 (예: 고룡의 핏줄)
+  occasion  String? // 날짜/회차 자유 입력 (선택)
+  memberId  Int
+  quantity  Int      @default(0) // 지급 수량(개)
   createdAt DateTime @default(now())
 
   member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)

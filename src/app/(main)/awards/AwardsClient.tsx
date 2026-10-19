@@ -35,6 +35,7 @@ export interface DonationRow {
   guildId: number | null;
   quantity: number;
 }
+export type PayoutRow = DonationRow;
 export interface MemberOpt {
   id: number;
   name: string;
@@ -46,16 +47,20 @@ export default function AwardsClient({
   guilds,
   payStats,
   donations,
+  payouts,
   members,
 }: {
   awards: Award[];
   guilds: GuildOpt[];
   payStats: PayStat[];
   donations: DonationRow[];
+  payouts: PayoutRow[];
   members: MemberOpt[];
 }) {
   const router = useRouter();
-  const [view, setView] = useState<"items" | "pay" | "donate">("items");
+  const [view, setView] = useState<
+    "items" | "pay" | "donate" | "payout"
+  >("items");
   const [guildId, setGuildId] = useState<number | "all">("all");
   const [category, setCategory] = useState<string>("all");
   const [search, setSearch] = useState("");
@@ -168,6 +173,97 @@ export default function AwardsClient({
     [donateFiltered]
   );
 
+  // 지급 입력
+  const [pItem, setPItem] = useState("");
+  const [pMember, setPMember] = useState<number | "">("");
+  const [pQty, setPQty] = useState("");
+  const [pBusy, setPBusy] = useState(false);
+  const [pErr, setPErr] = useState("");
+
+  async function addPayout() {
+    setPErr("");
+    const qty = Number(pQty);
+    if (!pItem.trim()) return setPErr("아이템명을 입력하세요.");
+    if (!pMember) return setPErr("길드원을 선택하세요.");
+    if (!Number.isInteger(qty) || qty <= 0) return setPErr("수량을 확인하세요.");
+    setPBusy(true);
+    try {
+      const res = await fetch("/api/payouts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemName: pItem.trim(), memberId: pMember, quantity: qty }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setPErr(data?.message ?? "등록에 실패했습니다.");
+        return;
+      }
+      setPQty("");
+      router.refresh();
+    } finally {
+      setPBusy(false);
+    }
+  }
+
+  async function removePayout(id: number) {
+    const res = await fetch(`/api/payouts/${id}`, { method: "DELETE" });
+    if (res.ok) router.refresh();
+  }
+
+  const payoutFiltered = useMemo(() => {
+    const q = search.trim();
+    return payouts.filter(
+      (d) =>
+        (guildId === "all" || d.guildId === guildId) &&
+        (!q || d.memberName.includes(q) || d.itemName.includes(q))
+    );
+  }, [payouts, guildId, search]);
+
+  const payoutByItem = useMemo(() => {
+    const map = new Map<string, { total: number; rows: PayoutRow[] }>();
+    for (const d of payoutFiltered) {
+      if (!map.has(d.itemName)) map.set(d.itemName, { total: 0, rows: [] });
+      const e = map.get(d.itemName)!;
+      e.total += d.quantity;
+      e.rows.push(d);
+    }
+    return [...map.entries()]
+      .map(([itemName, v]) => ({ itemName, ...v }))
+      .sort((a, b) => b.total - a.total);
+  }, [payoutFiltered]);
+
+  const payoutByMember = useMemo(() => {
+    const map = new Map<
+      number,
+      { name: string; guildId: number | null; total: number; items: Map<string, number> }
+    >();
+    for (const d of payoutFiltered) {
+      if (!map.has(d.memberId))
+        map.set(d.memberId, {
+          name: d.memberName,
+          guildId: d.guildId,
+          total: 0,
+          items: new Map(),
+        });
+      const e = map.get(d.memberId)!;
+      e.total += d.quantity;
+      e.items.set(d.itemName, (e.items.get(d.itemName) ?? 0) + d.quantity);
+    }
+    return [...map.values()]
+      .map((v) => ({
+        ...v,
+        items: [...v.items.entries()]
+          .map(([itemName, qty]) => ({ itemName, qty }))
+          .sort((a, b) => b.qty - a.qty),
+      }))
+      .sort((a, b) => b.total - a.total);
+  }, [payoutFiltered]);
+
+  const payoutTotal = useMemo(
+    () => payoutFiltered.reduce((s, d) => s + d.quantity, 0),
+    [payoutFiltered]
+  );
+
   const payFiltered = useMemo(() => {
     const q = search.trim();
     return payStats.filter(
@@ -236,6 +332,9 @@ export default function AwardsClient({
         <Tab active={view === "donate"} onClick={() => setView("donate")}>
           길드기부 통계
         </Tab>
+        <Tab active={view === "payout"} onClick={() => setView("payout")}>
+          지급 통계
+        </Tab>
       </div>
 
       {/* 요약 */}
@@ -276,7 +375,7 @@ export default function AwardsClient({
             tone="amber"
           />
         </div>
-      ) : (
+      ) : view === "donate" ? (
         <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
           <Card label="총 기부 수량" value={`${donateTotal.toLocaleString()}개`} tone="sky" />
           <Card label="기부 품목" value={`${donateByItem.length}종`} />
@@ -285,6 +384,18 @@ export default function AwardsClient({
             label="최다 기부자"
             value={donateByMember[0]?.name ?? "-"}
             sub={donateByMember[0] ? `${donateByMember[0].total.toLocaleString()}개` : undefined}
+            tone="amber"
+          />
+        </div>
+      ) : (
+        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <Card label="총 지급 수량" value={`${payoutTotal.toLocaleString()}개`} tone="sky" />
+          <Card label="지급 품목" value={`${payoutByItem.length}종`} />
+          <Card label="지급 인원" value={`${payoutByMember.length}명`} />
+          <Card
+            label="최다 수령"
+            value={payoutByMember[0]?.name ?? "-"}
+            sub={payoutByMember[0] ? `${payoutByMember[0].total.toLocaleString()}개` : undefined}
             tone="amber"
           />
         </div>
@@ -586,6 +697,162 @@ export default function AwardsClient({
                     </td>
                     <td className="px-3 py-2 text-right text-sky-700">
                       {donateTotal.toLocaleString()}개
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 지급 통계 */}
+      {view === "payout" && (
+        <div className="grid gap-4">
+          {/* 입력 폼 */}
+          <div className="rounded-lg border border-neutral-200 bg-white p-4">
+            <p className="mb-2 text-sm font-semibold text-neutral-700">지급 등록</p>
+            <div className="flex flex-wrap items-end gap-2">
+              <div className="flex-1 min-w-[150px]">
+                <label className="mb-1 block text-xs text-neutral-500">아이템명</label>
+                <input
+                  value={pItem}
+                  onChange={(e) => setPItem(e.target.value)}
+                  placeholder="예) 고룡의 핏줄"
+                  className="w-full rounded border border-neutral-300 px-3 py-1.5 text-sm focus:border-sky-400 focus:outline-none"
+                />
+              </div>
+              <div className="min-w-[130px]">
+                <label className="mb-1 block text-xs text-neutral-500">지급받은 길드원</label>
+                <select
+                  value={pMember}
+                  onChange={(e) => setPMember(e.target.value ? Number(e.target.value) : "")}
+                  className="w-full rounded border border-neutral-300 px-2.5 py-1.5 text-sm focus:border-sky-400 focus:outline-none"
+                >
+                  <option value="">선택</option>
+                  {members.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="w-24">
+                <label className="mb-1 block text-xs text-neutral-500">수량(개)</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={pQty}
+                  onChange={(e) => setPQty(e.target.value)}
+                  placeholder="10"
+                  className="w-full rounded border border-neutral-300 px-3 py-1.5 text-sm tabular-nums focus:border-sky-400 focus:outline-none"
+                />
+              </div>
+              <button
+                onClick={addPayout}
+                disabled={pBusy}
+                className="rounded bg-sky-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-50"
+              >
+                추가
+              </button>
+            </div>
+            {pErr && <p className="mt-2 text-xs text-red-500">{pErr}</p>}
+            <p className="mt-2 text-[11px] text-neutral-400">
+              기부받은 아이템을 길드원에게 지급(분배)한 내역입니다. 같은 아이템명은 자동으로 묶여서 집계됩니다.
+            </p>
+          </div>
+
+          {/* 아이템별 지급 내역 */}
+          {payoutByItem.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-neutral-300 bg-white py-10 text-center text-sm text-neutral-400">
+              지급 내역이 없습니다.
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {payoutByItem.map((it) => (
+                <div
+                  key={it.itemName}
+                  className="rounded-lg border border-neutral-200 bg-white p-4"
+                >
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="font-semibold">{it.itemName}</span>
+                    <span className="ml-auto rounded bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+                      총 {it.total.toLocaleString()}개
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {it.rows.map((r) => (
+                      <span
+                        key={r.id}
+                        className="inline-flex items-center gap-1.5 rounded bg-neutral-100 px-2 py-1 text-xs text-neutral-700"
+                      >
+                        <span className="font-medium">{r.memberName}</span>
+                        <span className="tabular-nums">{r.quantity.toLocaleString()}개</span>
+                        <button
+                          onClick={() => removePayout(r.id)}
+                          className="text-neutral-400 hover:text-red-500"
+                          title="삭제"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* 전체 지급 통계 (길드원별) */}
+          {payoutByMember.length > 0 && (
+            <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
+              <div className="border-b border-neutral-100 px-4 py-2.5 text-sm font-semibold text-neutral-700">
+                전체 지급 통계 (길드원별)
+              </div>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-neutral-200 bg-neutral-50 text-neutral-600">
+                    <th className="px-3 py-2.5 text-left font-semibold">순위</th>
+                    <th className="px-3 py-2.5 text-left font-semibold">길드원</th>
+                    <th className="px-3 py-2.5 text-left font-semibold">소속</th>
+                    <th className="px-3 py-2.5 text-left font-semibold">아이템별 내역</th>
+                    <th className="px-3 py-2.5 text-right font-semibold">총 지급 수량</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {payoutByMember.map((m, i) => (
+                    <tr key={m.name} className="border-b border-neutral-50 align-top">
+                      <td className="px-3 py-2 text-neutral-400">{i + 1}</td>
+                      <td className="px-3 py-2 font-medium">{m.name}</td>
+                      <td className="px-3 py-2 text-neutral-500">{guildName(m.guildId)}</td>
+                      <td className="px-3 py-2">
+                        <div className="flex flex-wrap gap-1">
+                          {m.items.map((it) => (
+                            <span
+                              key={it.itemName}
+                              className="inline-flex items-center gap-1 rounded bg-neutral-100 px-2 py-0.5 text-xs text-neutral-700"
+                            >
+                              <span>{it.itemName}</span>
+                              <span className="font-semibold tabular-nums text-emerald-700">
+                                {it.qty.toLocaleString()}개
+                              </span>
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-right font-semibold text-emerald-700">
+                        {m.total.toLocaleString()}개
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-neutral-50 font-semibold">
+                    <td className="px-3 py-2" colSpan={4}>
+                      합계
+                    </td>
+                    <td className="px-3 py-2 text-right text-emerald-700">
+                      {payoutTotal.toLocaleString()}개
                     </td>
                   </tr>
                 </tfoot>

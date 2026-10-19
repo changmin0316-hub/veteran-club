@@ -6,6 +6,7 @@ import AwardsClient, {
   type GuildOpt,
   type PayStat,
   type DonationRow,
+  type PayoutRow,
   type MemberOpt,
 } from "./AwardsClient";
 
@@ -14,7 +15,7 @@ export const dynamic = "force-dynamic";
 export default async function AwardsPage() {
   await requireManagerPage();
 
-  const [awarded, guilds, weeks, donations, members] = await Promise.all([
+  const [awarded, guilds, weeks, donations, payouts, members] = await Promise.all([
     prisma.eventItem.findMany({
       where: { winnerId: { not: null } },
       include: {
@@ -27,6 +28,10 @@ export default async function AwardsPage() {
     prisma.guild.findMany({ orderBy: { order: "asc" } }),
     prisma.week.findMany({ orderBy: { number: "desc" } }),
     prisma.donation.findMany({
+      include: { member: { select: { id: true, name: true, guildId: true } } },
+      orderBy: { id: "desc" },
+    }),
+    prisma.payout.findMany({
       include: { member: { select: { id: true, name: true, guildId: true } } },
       orderBy: { id: "desc" },
     }),
@@ -101,6 +106,16 @@ export default async function AwardsPage() {
     quantity: d.quantity,
   }));
 
+  const payoutRows: PayoutRow[] = payouts.map((p) => ({
+    id: p.id,
+    itemName: p.itemName,
+    occasion: p.occasion,
+    memberId: p.memberId,
+    memberName: p.member.name,
+    guildId: p.member.guildId,
+    quantity: p.quantity,
+  }));
+
   const memberOpts: MemberOpt[] = members.map((m) => ({
     id: m.id,
     name: m.name,
@@ -113,6 +128,7 @@ export default async function AwardsPage() {
       guilds={guildOpts}
       payStats={payStats}
       donations={donationRows}
+      payouts={payoutRows}
       members={memberOpts}
     />
   );
