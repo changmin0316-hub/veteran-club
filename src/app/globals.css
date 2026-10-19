@@ -104,6 +104,21 @@ body.login-bg {
 /* 투명 배경을 의도한 인라인 입력(표 안)은 투명 유지 */
 .dark .bg-transparent { background-color: transparent; }
 
+/* 표 헤더 고정: 표를 내부 스크롤 영역으로 만들고 thead를 상단 고정 */
+.tbl-sticky {
+  max-height: 68vh;
+  overflow: auto;
+}
+.tbl-sticky thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #f1f2f4;
+}
+.dark .tbl-sticky thead th {
+  background-color: #1f2026;
+}
+
 /* hover/focus 변형도 어둡게 (하얀 배경 위 하얀 글씨 방지) */
 .dark .hover\:bg-neutral-50:hover { background-color: #212329; }
 .dark .hover\:bg-neutral-100:hover { background-color: #26282f; }

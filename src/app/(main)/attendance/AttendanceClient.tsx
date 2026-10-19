@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { WeekOpt, GuildOpt } from "../settlement-types";
 import { useSettlement } from "../useSettlement";
-import { WeekSelect, GuildTabs } from "../SettlementControls";
+import { WeekSelect, GuildTabs, SortTh, useRowSort } from "../SettlementControls";
 
 type Edits = Record<string, number>; // `${memberId}:${categoryId}` -> count
 
@@ -22,6 +22,7 @@ export default function AttendanceClient({
   const router = useRouter();
   const { weekId, setWeekId, guildId, setGuildId, data, loading, error, reload } =
     useSettlement(weeks, guilds);
+  const { sorted, sort, toggle } = useRowSort(data?.rows ?? []);
   const [edits, setEdits] = useState<Edits>({});
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -81,8 +82,8 @@ export default function AttendanceClient({
   // 길드원(비관리자)은 본인 행만 표시
   const rowsToShow = data
     ? isManager
-      ? data.rows
-      : data.rows.filter((r) => myName != null && r.name === myName)
+      ? sorted
+      : sorted.filter((r) => myName != null && r.name === myName)
     : [];
 
   return (
@@ -134,19 +135,19 @@ export default function AttendanceClient({
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
+      <div className="tbl-sticky overflow-auto rounded-lg border border-neutral-200 bg-white">
         <table className="w-full min-w-[900px] text-sm">
           <thead>
             <tr className="border-b border-neutral-200 bg-neutral-50 text-neutral-600">
-              <th className="px-3 py-2.5 text-left font-semibold">캐릭명</th>
-              <th className="px-3 py-2.5 text-left font-semibold">출석율</th>
+              <SortTh label="캐릭명" k="name" sort={sort} onSort={toggle} align="left" />
+              <SortTh label="출석율" k="attendanceRate" sort={sort} onSort={toggle} align="left" />
               {isManager && (
                 <>
-                  <th className="px-3 py-2.5 text-right font-semibold">분배율</th>
-                  <th className="px-3 py-2.5 text-right font-semibold">분배금</th>
+                  <SortTh label="분배율" k="shareRatio" sort={sort} onSort={toggle} />
+                  <SortTh label="분배금" k="share" sort={sort} onSort={toggle} />
                 </>
               )}
-              <th className="px-3 py-2.5 text-right font-semibold">적용횟수</th>
+              <SortTh label="적용횟수" k="applied" sort={sort} onSort={toggle} />
               {data?.categories.map((c) => (
                 <th key={c.id} className="px-2 py-2.5 text-center font-semibold">
                   {c.name}

@@ -418,7 +418,7 @@ export default function UsersClient({
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
+      <div className="tbl-sticky overflow-auto rounded-lg border border-neutral-200 bg-white">
         <table className="w-full text-sm" style={{ minWidth: isManager ? 1140 : 520 }}>
           <thead>
             <tr className="border-b border-neutral-200 bg-neutral-50 text-neutral-600">

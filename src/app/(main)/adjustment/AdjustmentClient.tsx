@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { WeekOpt, GuildOpt } from "../settlement-types";
 import { useSettlement } from "../useSettlement";
-import { WeekSelect, GuildTabs } from "../SettlementControls";
+import { WeekSelect, GuildTabs, SortTh, useRowSort } from "../SettlementControls";
 
 export default function AdjustmentClient({
   weeks,
@@ -14,6 +14,7 @@ export default function AdjustmentClient({
 }) {
   const { weekId, setWeekId, guildId, setGuildId, data, loading, reload } =
     useSettlement(weeks, guilds);
+  const { sorted, sort, toggle } = useRowSort(data?.rows ?? []);
 
   const [diamond, setDiamond] = useState<number>(0);
   const [busy, setBusy] = useState(false);
@@ -177,9 +178,9 @@ export default function AdjustmentClient({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-neutral-200 bg-neutral-50 text-neutral-600">
-                  <th className="px-3 py-2.5 text-left font-semibold">이름</th>
-                  <th className="px-3 py-2.5 text-right font-semibold">분배율</th>
-                  <th className="px-3 py-2.5 text-right font-semibold">분배금</th>
+                  <SortTh label="이름" k="name" sort={sort} onSort={toggle} align="left" />
+                  <SortTh label="분배율" k="shareRatio" sort={sort} onSort={toggle} />
+                  <SortTh label="분배금" k="share" sort={sort} onSort={toggle} />
                 </tr>
               </thead>
               <tbody>
@@ -200,7 +201,7 @@ export default function AdjustmentClient({
                   </tr>
                 )}
                 {!loading &&
-                  data?.rows.map((r) => (
+                  sorted.map((r) => (
                     <tr
                       key={r.memberId}
                       className={`border-b border-neutral-50 ${r.excluded ? "text-neutral-300" : ""}`}

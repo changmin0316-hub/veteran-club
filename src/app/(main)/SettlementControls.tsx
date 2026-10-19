@@ -1,6 +1,66 @@
 "use client";
 
-import type { WeekOpt, GuildOpt } from "./settlement-types";
+import { useMemo, useState } from "react";
+import type { WeekOpt, GuildOpt, SettlementRow } from "./settlement-types";
+
+export type RowSortKey =
+  | "name"
+  | "statTotal"
+  | "attendanceRate"
+  | "applied"
+  | "shareRatio"
+  | "share";
+
+// 정산/출석 표 정렬 훅 (오름/내림 토글)
+export function useRowSort(rows: SettlementRow[]) {
+  const [sort, setSort] = useState<{ key: RowSortKey; dir: "asc" | "desc" } | null>(
+    null
+  );
+  const sorted = useMemo(() => {
+    if (!sort) return rows;
+    const dir = sort.dir === "asc" ? 1 : -1;
+    return [...rows].sort((a, b) => {
+      if (sort.key === "name") return a.name.localeCompare(b.name) * dir;
+      return ((a[sort.key] as number) - (b[sort.key] as number)) * dir;
+    });
+  }, [rows, sort]);
+  const toggle = (k: RowSortKey) =>
+    setSort((p) =>
+      p && p.key === k
+        ? { key: k, dir: p.dir === "asc" ? "desc" : "asc" }
+        : { key: k, dir: k === "name" ? "asc" : "desc" }
+    );
+  return { sorted, sort, toggle };
+}
+
+export function SortTh({
+  label,
+  k,
+  sort,
+  onSort,
+  align = "right",
+}: {
+  label: string;
+  k: RowSortKey;
+  sort: { key: RowSortKey; dir: "asc" | "desc" } | null;
+  onSort: (k: RowSortKey) => void;
+  align?: "left" | "right";
+}) {
+  const active = sort?.key === k;
+  return (
+    <th
+      onClick={() => onSort(k)}
+      className={`cursor-pointer select-none px-3 py-2.5 font-semibold hover:text-sky-600 ${
+        align === "left" ? "text-left" : "text-right"
+      }`}
+    >
+      {label}
+      <span className={`ml-0.5 text-[10px] ${active ? "text-sky-500" : "text-neutral-400"}`}>
+        {active ? (sort!.dir === "asc" ? "▲" : "▼") : "↕"}
+      </span>
+    </th>
+  );
+}
 
 export function WeekSelect({
   weeks,

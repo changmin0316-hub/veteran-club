@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { WeekOpt, GuildOpt } from "../settlement-types";
 import { useSettlement } from "../useSettlement";
-import { WeekSelect, GuildTabs } from "../SettlementControls";
+import { WeekSelect, GuildTabs, SortTh, useRowSort } from "../SettlementControls";
 
 export default function ClosingClient({
   weeks,
@@ -14,6 +14,7 @@ export default function ClosingClient({
 }) {
   const { weekId, setWeekId, guildId, setGuildId, data, loading, reload } =
     useSettlement(weeks, guilds);
+  const { sorted, sort, toggle: sortBy } = useRowSort(data?.rows ?? []);
 
   const [ratio, setRatio] = useState<number>(0);
   const [excluded, setExcluded] = useState<Set<number>>(new Set());
@@ -226,10 +227,10 @@ export default function ClosingClient({
           <thead>
             <tr className="border-b border-neutral-200 bg-neutral-50 text-neutral-600">
               <th className="w-12 px-3 py-2.5" />
-              <th className="px-3 py-2.5 text-left font-semibold">캐릭터이름</th>
-              <th className="px-3 py-2.5 text-right font-semibold">3대</th>
-              <th className="px-3 py-2.5 text-right font-semibold">출석율</th>
-              <th className="px-3 py-2.5 text-right font-semibold">분배금</th>
+              <SortTh label="캐릭터이름" k="name" sort={sort} onSort={sortBy} align="left" />
+              <SortTh label="3대" k="statTotal" sort={sort} onSort={sortBy} />
+              <SortTh label="출석율" k="attendanceRate" sort={sort} onSort={sortBy} />
+              <SortTh label="분배금" k="share" sort={sort} onSort={sortBy} />
             </tr>
           </thead>
           <tbody>
@@ -241,7 +242,7 @@ export default function ClosingClient({
               </tr>
             )}
             {!loading &&
-              data?.rows.map((r) => {
+              sorted.map((r) => {
                 const isExcluded = excluded.has(r.memberId);
                 return (
                   <tr
