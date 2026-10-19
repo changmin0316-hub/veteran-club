@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 // 관리자 계정. 운영에서는 SEED_ADMIN_NAME / SEED_ADMIN_PASSWORD 환경변수로
 // 지정하세요. (미지정 시 개발용 기본값 — 최초 로그인 후 반드시 변경)
-const ADMIN_NAME = process.env.SEED_ADMIN_NAME ?? "admin";
+const ADMIN_NAME = process.env.SEED_ADMIN_NAME ?? "VC원장";
 const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? "veteran1234";
 
 const JOBS = [

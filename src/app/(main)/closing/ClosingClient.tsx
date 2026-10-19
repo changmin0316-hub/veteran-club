@@ -19,6 +19,8 @@ export default function ClosingClient({
   const [excluded, setExcluded] = useState<Set<number>>(new Set());
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [extraMemberId, setExtraMemberId] = useState<number | "">("");
+  const [extraAmount, setExtraAmount] = useState<number>(0);
 
   // 데이터 로드 시 로컬 상태 동기화
   useEffect(() => {
@@ -31,6 +33,34 @@ export default function ClosingClient({
   function flash(m: string) {
     setMsg(m);
     window.setTimeout(() => setMsg(null), 3000);
+  }
+
+  async function saveExtra() {
+    if (!weekId) return;
+    if (!extraMemberId) return flash("길드원을 선택하세요.");
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/weeks/${weekId}/extra`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          memberId: Number(extraMemberId),
+          amount: extraAmount,
+        }),
+      });
+      if (!res.ok) throw new Error((await res.json()).message ?? "변경 실패");
+      const nm = data?.rows.find((r) => r.memberId === Number(extraMemberId))?.name;
+      await reload();
+      flash(
+        extraAmount > 0
+          ? `${nm} 추가 분배금 ${extraAmount.toLocaleString()}원 반영`
+          : `${nm} 추가 분배금 해제`
+      );
+    } catch (e) {
+      flash(e instanceof Error ? e.message : "오류");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function saveRatio() {
@@ -116,6 +146,62 @@ export default function ClosingClient({
         >
           변경
         </button>
+      </div>
+
+      {/* 추가 분배금 */}
+      <div className="mb-3 rounded-lg border border-neutral-200 bg-white p-3">
+        <p className="mb-2 text-xs font-medium text-neutral-600">추가 분배금</p>
+        <div className="flex flex-wrap items-end gap-2">
+          <select
+            value={extraMemberId}
+            onChange={(e) => {
+              const id = e.target.value ? Number(e.target.value) : "";
+              setExtraMemberId(id);
+              const cur = data?.rows.find((r) => r.memberId === id)?.extra ?? 0;
+              setExtraAmount(cur);
+            }}
+            className="rounded border border-neutral-300 px-3 py-2 text-sm focus:border-sky-400 focus:outline-none"
+          >
+            <option value="">캐릭터 선택</option>
+            {(data?.rows ?? []).map((r) => (
+              <option key={r.memberId} value={r.memberId}>
+                {r.name}
+                {r.extra > 0 ? ` (현재 ${r.extra.toLocaleString()}원)` : ""}
+              </option>
+            ))}
+          </select>
+          <div className="flex items-center gap-1">
+            <input
+              type="number"
+              min={0}
+              value={extraAmount}
+              onChange={(e) => setExtraAmount(Math.max(0, Number(e.target.value)))}
+              className="w-32 rounded border border-neutral-300 px-3 py-2 text-right text-sm focus:border-sky-400 focus:outline-none"
+            />
+            <span className="text-sm text-neutral-500">원</span>
+          </div>
+          <button
+            onClick={saveExtra}
+            disabled={busy}
+            className="rounded bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-50"
+          >
+            변경
+          </button>
+        </div>
+        {(data?.rows ?? []).some((r) => r.extra > 0) && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {(data?.rows ?? [])
+              .filter((r) => r.extra > 0)
+              .map((r) => (
+                <span
+                  key={r.memberId}
+                  className="rounded bg-sky-50 px-2 py-1 text-xs text-sky-700"
+                >
+                  {r.name} +{r.extra.toLocaleString()}원
+                </span>
+              ))}
+          </div>
+        )}
       </div>
 
       {msg && (

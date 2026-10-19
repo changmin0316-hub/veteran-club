@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
       excludeAmount: 0,
       distributable: 0,
       totalScore: 0,
-      rows: result.rows.map((r) => ({ ...r, shareRatio: 0, share: 0 })),
+      rows: result.rows.map((r) => ({ ...r, shareRatio: 0, share: 0, extra: 0 })),
     });
   }
 

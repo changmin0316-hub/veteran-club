@@ -17,6 +17,7 @@ export interface SettlementRow {
   score: number;
   attendanceRate: number;
   shareRatio: number;
+  extra: number;
   share: number;
   excluded: boolean;
   counts: Record<number, number>;

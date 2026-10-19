@@ -9,7 +9,8 @@ export interface SettlementRow {
   score: number; // 가중 출석 점수
   attendanceRate: number; // 출석율 (0~1, 최고점 대비)
   shareRatio: number; // 분배율 (0~1, 포함 인원 점수 합 대비)
-  share: number; // 분배금
+  extra: number; // 추가 분배금(수동 지급)
+  share: number; // 분배금 (비율분배 + 추가분배금)
   excluded: boolean; // 분배 제외 여부
   counts: Record<number, number>; // categoryId -> count
 }
@@ -32,18 +33,21 @@ export async function computeSettlement(
   const week = await prisma.week.findUnique({ where: { id: weekId } });
   if (!week) return null;
 
-  const [categories, members, records, exclusions] = await Promise.all([
-    prisma.attendanceCategory.findMany({ orderBy: { sortOrder: "asc" } }),
-    prisma.member.findMany({
-      where: guildId ? { guildId } : undefined,
-      orderBy: [{ guildId: "asc" }, { name: "asc" }],
-    }),
-    prisma.attendanceRecord.findMany({ where: { weekId } }),
-    prisma.settlementExclusion.findMany({ where: { weekId } }),
-  ]);
+  const [categories, members, records, exclusions, extraPays] =
+    await Promise.all([
+      prisma.attendanceCategory.findMany({ orderBy: { sortOrder: "asc" } }),
+      prisma.member.findMany({
+        where: guildId ? { guildId } : undefined,
+        orderBy: [{ guildId: "asc" }, { name: "asc" }],
+      }),
+      prisma.attendanceRecord.findMany({ where: { weekId } }),
+      prisma.settlementExclusion.findMany({ where: { weekId } }),
+      prisma.extraPay.findMany({ where: { weekId } }),
+    ]);
 
   const weightById = new Map(categories.map((c) => [c.id, c.weight]));
   const excludedSet = new Set(exclusions.map((e) => e.memberId));
+  const extraById = new Map(extraPays.map((e) => [e.memberId, e.amount]));
 
   // 멤버별 카테고리 카운트 집계
   const countsByMember = new Map<number, Record<number, number>>();
@@ -81,6 +85,7 @@ export async function computeSettlement(
   const rows: SettlementRow[] = base.map((b) => {
     const shareRatio =
       b.excluded || totalScore <= 0 ? 0 : b.score / totalScore;
+    const extra = extraById.get(b.member.id) ?? 0;
     return {
       memberId: b.member.id,
       name: b.member.name,
@@ -90,7 +95,8 @@ export async function computeSettlement(
       score: b.score,
       attendanceRate: maxScore > 0 ? b.score / maxScore : 0,
       shareRatio,
-      share: Math.floor(distributable * shareRatio),
+      extra,
+      share: Math.floor(distributable * shareRatio) + extra,
       excluded: b.excluded,
       counts: b.counts,
     };

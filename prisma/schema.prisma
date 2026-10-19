@@ -51,6 +51,7 @@ model Member {
   exclusions   SettlementExclusion[]
   wonItems     EventItem[]           @relation("ItemWinner")
   monthlyStats MonthlyStat[]
+  extraPays    ExtraPay[]
 
   @@index([guildId])
 }
@@ -67,6 +68,21 @@ model Week {
   events      Event[]
   attendances AttendanceRecord[]
   exclusions  SettlementExclusion[]
+  extraPays   ExtraPay[]
+}
+
+/// 주차별 추가 분배금 (특정 길드원에게 수동 지급, 원 단위)
+model ExtraPay {
+  id       Int @id @default(autoincrement())
+  weekId   Int
+  memberId Int
+  amount   Int @default(0)
+
+  week   Week   @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([weekId, memberId])
+  @@index([weekId])
 }
 
 /// 주차별 분배 제외 대상

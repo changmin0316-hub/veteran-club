@@ -18,17 +18,40 @@ export interface GuildOpt {
   order: number;
   name: string;
 }
+export interface PayStat {
+  memberId: number;
+  name: string;
+  guildId: number | null;
+  total: number;
+  weeks: { label: string; share: number }[];
+}
 
 export default function AwardsClient({
   awards,
   guilds,
+  payStats,
 }: {
   awards: Award[];
   guilds: GuildOpt[];
+  payStats: PayStat[];
 }) {
+  const [view, setView] = useState<"items" | "pay">("items");
   const [guildId, setGuildId] = useState<number | "all">("all");
   const [category, setCategory] = useState<string>("all");
   const [search, setSearch] = useState("");
+
+  const payFiltered = useMemo(() => {
+    const q = search.trim();
+    return payStats.filter(
+      (p) =>
+        (guildId === "all" || p.guildId === guildId) &&
+        (!q || p.name.includes(q))
+    );
+  }, [payStats, guildId, search]);
+  const payTotal = useMemo(
+    () => payFiltered.reduce((s, p) => s + p.total, 0),
+    [payFiltered]
+  );
 
   const categories = useMemo(
     () => Array.from(new Set(awards.map((a) => a.category))).sort(),
@@ -74,28 +97,55 @@ export default function AwardsClient({
 
   return (
     <section>
-      {/* 요약 */}
-      <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Card label="총 낙찰" value={`${filtered.length}건`} tone="sky" />
-        <Card label="낙찰 인원" value={`${byMember.length}명`} />
-        <Card
-          label="카테고리"
-          value={`${Object.keys(catCount).length}종`}
-          sub={
-            Object.entries(catCount)
-              .sort((a, b) => b[1] - a[1])
-              .slice(0, 2)
-              .map(([c, n]) => `${c} ${n}`)
-              .join(" · ") || "-"
-          }
-        />
-        <Card
-          label="최다 낙찰"
-          value={byMember[0]?.name ?? "-"}
-          sub={byMember[0] ? `${byMember[0].items.length}건` : undefined}
-          tone="amber"
-        />
+      {/* 뷰 전환 */}
+      <div className="mb-3 flex gap-1.5">
+        <Tab active={view === "items"} onClick={() => setView("items")}>
+          낙찰 아이템
+        </Tab>
+        <Tab active={view === "pay"} onClick={() => setView("pay")}>
+          분배금 통계
+        </Tab>
       </div>
+
+      {/* 요약 */}
+      {view === "items" ? (
+        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <Card label="총 낙찰" value={`${filtered.length}건`} tone="sky" />
+          <Card label="낙찰 인원" value={`${byMember.length}명`} />
+          <Card
+            label="카테고리"
+            value={`${Object.keys(catCount).length}종`}
+            sub={
+              Object.entries(catCount)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 2)
+                .map(([c, n]) => `${c} ${n}`)
+                .join(" · ") || "-"
+            }
+          />
+          <Card
+            label="최다 낙찰"
+            value={byMember[0]?.name ?? "-"}
+            sub={byMember[0] ? `${byMember[0].items.length}건` : undefined}
+            tone="amber"
+          />
+        </div>
+      ) : (
+        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <Card label="총 분배금" value={`${payTotal.toLocaleString()}원`} tone="sky" />
+          <Card label="수령 인원" value={`${payFiltered.length}명`} />
+          <Card
+            label="1인 평균"
+            value={`${(payFiltered.length ? Math.round(payTotal / payFiltered.length) : 0).toLocaleString()}원`}
+          />
+          <Card
+            label="최다 수령"
+            value={payFiltered[0]?.name ?? "-"}
+            sub={payFiltered[0] ? `${payFiltered[0].total.toLocaleString()}원` : undefined}
+            tone="amber"
+          />
+        </div>
+      )}
 
       {/* 필터 */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -109,18 +159,20 @@ export default function AwardsClient({
             </Tab>
           ))}
         </div>
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="rounded border border-neutral-300 px-2.5 py-1.5 text-sm focus:border-sky-400 focus:outline-none"
-        >
-          <option value="all">전체 카테고리</option>
-          {categories.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
+        {view === "items" && (
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="rounded border border-neutral-300 px-2.5 py-1.5 text-sm focus:border-sky-400 focus:outline-none"
+          >
+            <option value="all">전체 카테고리</option>
+            {categories.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        )}
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -129,8 +181,55 @@ export default function AwardsClient({
         />
       </div>
 
+      {/* 분배금 통계 */}
+      {view === "pay" &&
+        (payFiltered.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-neutral-300 bg-white py-10 text-center text-sm text-neutral-400">
+            분배금 내역이 없습니다.
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-neutral-200 bg-neutral-50 text-neutral-600">
+                  <th className="px-3 py-2.5 text-left font-semibold">길드원</th>
+                  <th className="px-3 py-2.5 text-left font-semibold">소속</th>
+                  <th className="px-3 py-2.5 text-right font-semibold">총 분배금</th>
+                  <th className="px-3 py-2.5 text-left font-semibold">주차별 내역</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payFiltered.map((p) => (
+                  <tr key={p.memberId} className="border-b border-neutral-50">
+                    <td className="px-3 py-2 font-medium">{p.name}</td>
+                    <td className="px-3 py-2 text-neutral-500">
+                      {guildName(p.guildId)}
+                    </td>
+                    <td className="px-3 py-2 text-right font-semibold text-sky-700">
+                      {p.total.toLocaleString()}원
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="flex flex-wrap gap-1">
+                        {p.weeks.map((w, i) => (
+                          <span
+                            key={i}
+                            className="rounded bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600"
+                          >
+                            {w.label} {w.share.toLocaleString()}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
+
       {/* 길드원별 낙찰 내역 */}
-      {byMember.length === 0 ? (
+      {view === "items" &&
+        (byMember.length === 0 ? (
         <div className="rounded-lg border border-dashed border-neutral-300 bg-white py-10 text-center text-sm text-neutral-400">
           낙찰 내역이 없습니다.
         </div>
@@ -181,7 +280,7 @@ export default function AwardsClient({
             </div>
           ))}
         </div>
-      )}
+        ))}
     </section>
   );
 }
