@@ -47,6 +47,65 @@ export default function AdjustmentClient({
     }
   }
 
+  const settled = data?.week.settled ?? false;
+
+  // 현재 주차 다음 주차(주차 번호 오름차순 기준). weeks는 번호 내림차순 정렬 → 이전 인덱스가 다음 주차.
+  const nextWeek = (() => {
+    const idx = weeks.findIndex((w) => w.id === weekId);
+    return idx > 0 ? weeks[idx - 1] : null;
+  })();
+
+  async function completeSettle() {
+    if (!weekId || !data) return;
+    const label = weeks.find((w) => w.id === weekId)?.label ?? "이 주차";
+    if (
+      !window.confirm(
+        `${label} 분배를 완료 처리할까요?\n완료 후에는 해당 주차의 출석·정산 입력이 불가합니다.`
+      )
+    )
+      return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/weeks/${weekId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ settled: true }),
+      });
+      if (!res.ok) throw new Error((await res.json()).message ?? "처리 실패");
+      if (nextWeek) {
+        setWeekId(nextWeek.id);
+        flash(`분배 완료 처리되었습니다. ${nextWeek.label}로 이동합니다.`);
+      } else {
+        await reload();
+        flash("분배 완료 처리되었습니다. (마지막 주차)");
+      }
+    } catch (e) {
+      flash(e instanceof Error ? e.message : "오류");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function cancelSettle() {
+    if (!weekId) return;
+    if (!window.confirm("분배 완료를 취소하고 다시 입력 가능하게 할까요?")) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/weeks/${weekId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ settled: false }),
+      });
+      if (!res.ok) throw new Error((await res.json()).message ?? "처리 실패");
+      await reload();
+      flash("분배 완료가 취소되었습니다.");
+    } catch (e) {
+      flash(e instanceof Error ? e.message : "오류");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const included = data?.rows.filter((r) => !r.excluded) ?? [];
   const totalShare = included.reduce((s, r) => s + r.share, 0);
 
@@ -84,12 +143,14 @@ export default function AdjustmentClient({
                   type="number"
                   min={0}
                   value={diamond}
+                  disabled={settled}
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) => setDiamond(Math.max(0, Number(e.target.value)))}
-                  className="flex-1 rounded border border-neutral-300 px-3 py-2 text-sm focus:border-sky-400 focus:outline-none"
+                  className="flex-1 rounded border border-neutral-300 px-3 py-2 text-sm focus:border-sky-400 focus:outline-none disabled:opacity-60"
                 />
                 <button
                   onClick={saveDiamond}
-                  disabled={busy}
+                  disabled={busy || settled}
                   className="rounded bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-50"
                 >
                   입력
@@ -164,6 +225,40 @@ export default function AdjustmentClient({
           </p>
         </div>
       </div>
+
+      {/* 분배 완료 처리 */}
+      {weekId && (
+        <div className="mt-5 flex flex-col items-center gap-2 border-t border-neutral-200 pt-5">
+          {settled ? (
+            <>
+              <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-medium text-emerald-700">
+                ✔ 분배 완료된 주차입니다 (출석·정산 입력 잠김)
+              </span>
+              <button
+                onClick={cancelSettle}
+                disabled={busy}
+                className="text-xs text-neutral-400 hover:text-red-500"
+              >
+                분배 완료 취소
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={completeSettle}
+                disabled={busy || loading}
+                className="rounded-lg bg-emerald-600 px-8 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+              >
+                분배 완료
+              </button>
+              <p className="text-xs text-neutral-400">
+                완료 시 이 주차의 출석·정산 입력이 잠기고
+                {nextWeek ? ` ${nextWeek.label}로 자동 이동합니다.` : " (다음 주차 없음)"}
+              </p>
+            </>
+          )}
+        </div>
+      )}
     </section>
   );
 }

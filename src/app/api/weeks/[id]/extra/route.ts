@@ -32,6 +32,14 @@ export async function POST(
   }
   const { memberId, amount } = parsed.data;
 
+  const wk = await prisma.week.findUnique({ where: { id: weekId } });
+  if (wk?.settled) {
+    return NextResponse.json(
+      { message: "분배 완료된 주차는 정산 입력이 불가합니다." },
+      { status: 409 }
+    );
+  }
+
   if (amount === 0) {
     await prisma.extraPay.deleteMany({ where: { weekId, memberId } });
     return NextResponse.json({ message: "ok", amount: 0 });

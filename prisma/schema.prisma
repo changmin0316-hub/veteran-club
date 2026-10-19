@@ -96,6 +96,7 @@ model Week {
   name         String? // 표시명
   excludeRatio Int      @default(0) // 결산 제외금(힐비) 비율 %
   diamond      Int      @default(0) // 길드 정산금(다이아 총액) - 분배 재원
+  settled      Boolean  @default(false) // 분배 완료(잠금): 출석/정산 입력 불가
   createdAt    DateTime @default(now())
 
   events      Event[]

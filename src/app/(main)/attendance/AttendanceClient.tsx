@@ -76,6 +76,7 @@ export default function AttendanceClient({
   }
 
   const dirtyCount = Object.keys(edits).length;
+  const settled = data?.week.settled ?? false;
   const baseCols = isManager ? 5 : 3; // 캐릭명·출석율·적용횟수(+분배율·분배금)
   // 길드원(비관리자)은 본인 행만 표시
   const rowsToShow = data
@@ -97,13 +98,14 @@ export default function AttendanceClient({
               onClick={() =>
                 router.push(`/attendance/new${guildId ? `?squad=${guildId}` : ""}`)
               }
-              className="rounded border border-sky-300 bg-white px-4 py-2 text-sm font-medium text-sky-700 hover:bg-sky-50"
+              disabled={settled}
+              className="rounded border border-sky-300 bg-white px-4 py-2 text-sm font-medium text-sky-700 hover:bg-sky-50 disabled:opacity-50"
             >
               출석등록
             </button>
             <button
               onClick={save}
-              disabled={busy || dirtyCount === 0}
+              disabled={busy || dirtyCount === 0 || settled}
               className="rounded bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-50"
             >
               출석 저장{dirtyCount > 0 ? ` (${dirtyCount})` : ""}
@@ -124,6 +126,11 @@ export default function AttendanceClient({
       {error && (
         <div className="mb-3 rounded border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-600">
           {error}
+        </div>
+      )}
+      {isManager && settled && (
+        <div className="mb-3 rounded border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700">
+          ✔ 분배 완료된 주차입니다. 출석 입력이 잠겨 있습니다.
         </div>
       )}
 
@@ -213,10 +220,12 @@ export default function AttendanceClient({
                           type="number"
                           min={0}
                           value={cellValue(r.memberId, c.id)}
+                          disabled={settled}
+                          onFocus={(e) => e.target.select()}
                           onChange={(e) =>
                             setCell(r.memberId, c.id, Number(e.target.value))
                           }
-                          className="w-14 rounded border border-transparent bg-transparent px-1 py-1 text-center hover:border-neutral-200 focus:border-sky-400 focus:bg-white focus:outline-none"
+                          className="w-14 rounded border border-transparent bg-transparent px-1 py-1 text-center hover:border-neutral-200 focus:border-sky-400 focus:bg-white focus:outline-none disabled:text-neutral-400"
                         />
                       ) : (
                         <span className="text-neutral-700">

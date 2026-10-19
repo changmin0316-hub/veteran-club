@@ -16,7 +16,7 @@ export interface SettlementRow {
 }
 
 export interface SettlementResult {
-  week: { id: number; number: number; name: string | null; excludeRatio: number; diamond: number };
+  week: { id: number; number: number; name: string | null; excludeRatio: number; diamond: number; settled: boolean };
   categories: { id: number; name: string; weight: number }[];
   rows: SettlementRow[];
   pool: number; // 길드 정산금(다이아)
@@ -109,6 +109,7 @@ export async function computeSettlement(
       name: week.name,
       excludeRatio: week.excludeRatio,
       diamond: week.diamond,
+      settled: week.settled,
     },
     categories: categories.map((c) => ({
       id: c.id,

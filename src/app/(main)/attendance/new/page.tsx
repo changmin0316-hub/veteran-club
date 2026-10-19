@@ -25,7 +25,7 @@ export default async function AttendanceNewPage({
 
   return (
     <AttendanceNewClient
-      weeks={weeks.map((w): Opt => ({ id: w.id, label: w.name ?? `${w.number}주차` }))}
+      weeks={weeks.map((w): Opt => ({ id: w.id, label: w.name ?? `${w.number}주차`, settled: w.settled }))}
       guilds={guilds.map((g) => ({ id: g.id, order: g.order, name: g.name }))}
       categories={categories.map(
         (c): Opt => ({ id: c.id, label: c.name, weight: c.weight })

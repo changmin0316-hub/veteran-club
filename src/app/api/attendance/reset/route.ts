@@ -21,6 +21,13 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ message: "주차를 지정하세요." }, { status: 400 });
   }
+  const week = await prisma.week.findUnique({ where: { id: parsed.data.weekId } });
+  if (week?.settled) {
+    return NextResponse.json(
+      { message: "분배 완료된 주차는 출석 입력이 불가합니다." },
+      { status: 409 }
+    );
+  }
   const r = await prisma.attendanceRecord.deleteMany({
     where: { weekId: parsed.data.weekId },
   });

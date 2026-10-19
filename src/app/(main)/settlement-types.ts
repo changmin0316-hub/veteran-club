@@ -1,6 +1,7 @@
 export interface WeekOpt {
   id: number;
   label: string;
+  settled?: boolean;
 }
 export interface GuildOpt {
   id: number;
@@ -30,6 +31,7 @@ export interface SettlementResult {
     name: string | null;
     excludeRatio: number;
     diamond: number;
+    settled: boolean;
   };
   categories: { id: number; name: string; weight: number }[];
   rows: SettlementRow[];

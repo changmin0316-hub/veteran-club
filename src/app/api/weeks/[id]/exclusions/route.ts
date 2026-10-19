@@ -33,6 +33,14 @@ export async function POST(
     return NextResponse.json({ message: "입력값을 확인하세요." }, { status: 400 });
   }
 
+  const wk = await prisma.week.findUnique({ where: { id: weekId } });
+  if (wk?.settled) {
+    return NextResponse.json(
+      { message: "분배 완료된 주차는 정산 입력이 불가합니다." },
+      { status: 409 }
+    );
+  }
+
   await prisma.$transaction([
     prisma.settlementExclusion.deleteMany({ where: { weekId } }),
     ...parsed.data.memberIds.map((memberId) =>

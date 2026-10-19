@@ -14,7 +14,7 @@ export default async function AdjustmentPage() {
 
   return (
     <AdjustmentClient
-      weeks={weeks.map((w): WeekOpt => ({ id: w.id, label: w.name ?? `${w.number}주차` }))}
+      weeks={weeks.map((w): WeekOpt => ({ id: w.id, label: w.name ?? `${w.number}주차`, settled: w.settled }))}
       guilds={guilds.map((g): GuildOpt => ({ id: g.id, order: g.order, name: g.name }))}
     />
   );

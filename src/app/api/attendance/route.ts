@@ -38,6 +38,14 @@ export async function POST(req: NextRequest) {
   }
   const { weekId, entries } = parsed.data;
 
+  const week = await prisma.week.findUnique({ where: { id: weekId } });
+  if (week?.settled) {
+    return NextResponse.json(
+      { message: "분배 완료된 주차는 출석 입력이 불가합니다." },
+      { status: 409 }
+    );
+  }
+
   await prisma.$transaction(
     entries.map((e) =>
       prisma.attendanceRecord.upsert({

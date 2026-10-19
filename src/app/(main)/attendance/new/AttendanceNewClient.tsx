@@ -7,6 +7,7 @@ export interface Opt {
   id: number;
   label: string;
   weight?: number;
+  settled?: boolean;
 }
 export interface MemberOpt {
   id: number;
@@ -102,10 +103,14 @@ export default function AttendanceNewClient({
     }
   }
 
+  const selectedSettled = weeks.find((w) => w.id === weekId)?.settled ?? false;
+
   async function save() {
     setErr(null);
     setMsg(null);
     if (!weekId) return setErr("주차를 선택하세요.");
+    if (selectedSettled)
+      return setErr("분배 완료된 주차는 출석 입력이 불가합니다.");
     if (!categoryId) return setErr("카테고리를 선택하세요.");
     if (!plays || plays < 1) return setErr("참여횟수를 1 이상 입력하세요.");
     if (attendees.size === 0) return setErr("참석자를 선택하세요.");
@@ -140,6 +145,7 @@ export default function AttendanceNewClient({
             {weeks.map((w) => (
               <option key={w.id} value={w.id}>
                 {w.label}
+                {w.settled ? " (완료)" : ""}
               </option>
             ))}
           </select>
@@ -182,6 +188,12 @@ export default function AttendanceNewClient({
           />
         </Field>
       </div>
+
+      {selectedSettled && (
+        <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+          ✔ 분배 완료된 주차입니다. 출석 입력이 잠겨 있습니다.
+        </div>
+      )}
 
       <div className="mt-3 rounded-lg bg-neutral-100 px-4 py-3 text-sm text-neutral-500">
         <p>현재 운영 기준은 횟수제입니다. 카테고리별 적용횟수에 따라 반영됩니다.</p>
@@ -283,7 +295,7 @@ export default function AttendanceNewClient({
         </button>
         <button
           onClick={save}
-          disabled={busy}
+          disabled={busy || selectedSettled}
           className="rounded bg-sky-600 px-6 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-50"
         >
           {busy ? "저장 중..." : "저장"}
