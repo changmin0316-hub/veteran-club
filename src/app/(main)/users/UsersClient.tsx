@@ -142,6 +142,19 @@ export default function UsersClient({
     };
   }, [rows]);
 
+  // 직업별 인원 통계 (인원 많은 순)
+  const jobStats = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of rows) {
+      const j = r.job?.trim() || "미지정";
+      m.set(j, (m.get(j) ?? 0) + 1);
+    }
+    return [...m.entries()]
+      .map(([job, count]) => ({ job, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [rows]);
+  const jobMax = jobStats[0]?.count ?? 1;
+
   const dirtyIds = useMemo(() => {
     const ids: number[] = [];
     for (const r of rows) {
@@ -323,6 +336,32 @@ export default function UsersClient({
           sub={`총합 ${summary.totalSum.toLocaleString()}`}
           tone="amber"
         />
+      </div>
+
+      {/* 직업별 인원 통계 */}
+      <div className="mb-4 rounded-lg border border-neutral-200 bg-white p-4">
+        <div className="mb-2.5 flex items-center gap-2">
+          <p className="text-sm font-semibold text-neutral-700">직업별 인원</p>
+          <span className="text-xs text-neutral-400">{jobStats.length}개 직업</span>
+        </div>
+        <div className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
+          {jobStats.map((j) => (
+            <div key={j.job} className="flex items-center gap-2">
+              <span className="w-24 shrink-0 truncate text-xs text-neutral-600">
+                {j.job}
+              </span>
+              <div className="relative h-4 flex-1 overflow-hidden rounded bg-neutral-100">
+                <div
+                  className="h-full rounded bg-sky-400/70"
+                  style={{ width: `${Math.round((j.count / jobMax) * 100)}%` }}
+                />
+              </div>
+              <span className="w-10 shrink-0 text-right text-xs font-semibold tabular-nums text-neutral-700">
+                {j.count}명
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {isManager && (
