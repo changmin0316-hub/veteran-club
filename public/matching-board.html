@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>레이븐2 한국 리전 어비스 2~5층 매칭 보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eceff4; --panel:#ffffff; --ink:#15203a; --muted:#5d6782; --line:#d6dbe6; --soft:#f3f5f9;
+  --gold:#b8861c; --gold-soft:#fbf1d9; --sel:#15203a; --sel-ink:#ffffff;
+  --ally:#0f7a8a; --ally-soft:#dcf2f5; --enemy:#c62828; --enemy-soft:#fde3e3;
+  --neu:#5d6782; --neu-soft:#eef1f6; --clash:#b45309; --clash-soft:#ffedd2; --free:#7a8199; --free-soft:#f1f2f5;
+  --f2:#1f6f8b; --f3:#b3261e; --f4:#a8791a; --f5:#7a2fb0;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1426; --panel:#171e36; --ink:#e8ecf7; --muted:#98a2c0; --line:#2a3456; --soft:#1e2742;
+    --gold:#e7b54a; --gold-soft:#2e2a1c; --sel:#e7b54a; --sel-ink:#15203a;
+    --ally:#5fd0de; --ally-soft:#12343d; --enemy:#ff7b7b; --enemy-soft:#3f1a1f;
+    --neu:#a6afcb; --neu-soft:#222b47; --clash:#ffb35c; --clash-soft:#3b2a14; --free:#8e96b0; --free-soft:#1c2340;
+    --f2:#4fb3d4; --f3:#ff6b5f; --f4:#e7b54a; --f5:#c48af0;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1426; --panel:#171e36; --ink:#e8ecf7; --muted:#98a2c0; --line:#2a3456; --soft:#1e2742;
+  --gold:#e7b54a; --gold-soft:#2e2a1c; --sel:#e7b54a; --sel-ink:#15203a;
+  --ally:#5fd0de; --ally-soft:#12343d; --enemy:#ff7b7b; --enemy-soft:#3f1a1f;
+  --neu:#a6afcb; --neu-soft:#222b47; --clash:#ffb35c; --clash-soft:#3b2a14; --free:#8e96b0; --free-soft:#1c2340;
+  --f2:#4fb3d4; --f3:#ff6b5f; --f4:#e7b54a; --f5:#c48af0;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:15px;line-height:1.5}
+.wrap{max-width:1320px;margin:0 auto;padding:24px 18px 60px}
+h1{font-family:"Black Han Sans","Malgun Gothic",sans-serif;font-weight:400;font-size:clamp(28px,5vw,44px);line-height:1.1;margin:0 0 6px;letter-spacing:-.5px}
+.sub{color:var(--muted);margin:0 0 20px;max-width:760px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.tabs{display:flex;gap:6px;border-bottom:2px solid var(--line);margin-bottom:18px;overflow-x:auto}
+.tab{background:none;border:0;padding:10px 16px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--gold)}
+.controls{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;margin-bottom:16px}
+.ctl-label{font-size:13px;color:var(--muted);margin-right:6px}
+.seg{display:inline-flex;flex-wrap:wrap;gap:4px}
+.seg button{border:1px solid var(--line);background:var(--panel);padding:6px 11px;border-radius:8px;font-weight:600;font-size:14px;min-width:38px;position:relative}
+.seg button[aria-pressed="true"]{background:var(--sel);color:var(--sel-ink);border-color:var(--sel)}
+.seg button.now::after{content:"";position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--enemy)}
+.weeknav{display:flex;align-items:center;gap:8px}
+.weeknav .arrow{border:1px solid var(--line);background:var(--panel);border-radius:8px;width:36px;height:34px;font-weight:700}
+.fc{display:inline-flex;align-items:center;background:var(--c);color:#fff;font-weight:700;font-size:13px;padding:2px 9px;border-radius:5px;white-space:nowrap;line-height:1.6}
+.fc.sm{font-size:12px;padding:0 7px}
+.sv.mrg{border-color:var(--enemy);color:var(--enemy)}
+.sv.mrg em{font-style:normal;opacity:.8;margin-left:3px}
+.sv{display:inline-block;font-size:12px;font-weight:700;border:1px solid var(--line);border-radius:5px;padding:0 6px;color:var(--muted);background:var(--soft);white-space:nowrap;line-height:1.7}
+.g{display:inline-flex;align-items:baseline;gap:5px;border-radius:6px;padding:1px 7px 1px 6px;font-size:13.5px;font-weight:600;max-width:100%;border-left:4px solid}
+.g small{font-weight:500;color:var(--muted);font-size:11px}
+.g i{font-style:normal;font-size:10.5px;font-weight:700}
+.g.rA{background:var(--ally-soft);border-color:var(--ally)} .g.rA i{color:var(--ally)}
+.g.rE{background:var(--enemy-soft);border-color:var(--enemy)} .g.rE i{color:var(--enemy)}
+.g.rN{background:var(--neu-soft);border-color:var(--line)} .g.rN i{color:var(--neu)}
+.g.selfg{outline:2px solid var(--gold);outline-offset:1px}
+.g .meb{font-size:10px;font-weight:700;color:var(--gold);letter-spacing:-.3px}
+.badge{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:999px;white-space:nowrap}
+.t-clash{background:var(--clash-soft);color:var(--clash)}
+.t-enemy{background:var(--enemy-soft);color:var(--enemy)}
+.t-neutral{background:var(--neu-soft);color:var(--neu)}
+.t-free{background:var(--free-soft);color:var(--free)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:12.5px;color:var(--muted);margin:0 0 16px;align-items:center}
+/* 층 섹션 */
+.floor-sec{margin-bottom:30px}
+.floor-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin:0 0 12px;padding-left:12px;border-left:6px solid var(--fl)}
+.floor-h h2{font-family:"Black Han Sans",sans-serif;font-weight:400;font-size:26px;margin:0;color:var(--ink)}
+.floor-h .note{font-size:13px;color:var(--muted)}
+.floor-h .pairs{display:flex;flex-wrap:wrap;gap:6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:14px}
+.grid.wide{grid-template-columns:repeat(auto-fill,minmax(520px,1fr))}
+@media (max-width:560px){.grid,.grid.wide{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--fl);border-radius:12px;overflow:hidden}
+.card-h{padding:10px 14px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.card-h .mt{font-family:"Black Han Sans",sans-serif;font-size:20px}
+.card-h .svs{font-weight:600;color:var(--muted);font-size:13px}
+.rbar{display:flex;align-items:center;gap:8px;margin-left:auto;font-size:12px;font-weight:700}
+.rbar .bar{display:flex;width:90px;height:8px;border-radius:4px;overflow:hidden;background:var(--soft)}
+.rbar .bar i{display:block}
+.rbar .a{color:var(--ally)} .rbar .e{color:var(--enemy)} .rbar .n{color:var(--neu)}
+.card-b{padding:10px 14px 12px}
+.duel{display:grid;grid-template-columns:44px 1fr 30px 1fr;gap:6px;align-items:start;padding:8px 0;border-top:1px solid var(--soft)}
+.duel:first-child{border-top:0}
+.glabel{font-size:12px;color:var(--muted);padding-top:3px;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.vs{font-family:"Black Han Sans",sans-serif;color:var(--gold);text-align:center;padding-top:2px}
+.unit{display:flex;flex-direction:column;gap:4px;min-width:0}
+.unit-h{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.gl{display:flex;flex-wrap:wrap;gap:4px}
+.cols{display:grid;gap:12px}
+.col-h{display:flex;justify-content:center;padding-bottom:6px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.urow{display:flex;gap:6px;align-items:flex-start;padding:4px 0;border-top:1px dashed var(--soft)}
+.urow:first-of-type{border-top:0}
+.urow .lab{flex:0 0 auto;padding-top:1px}
+.urow.me{background:var(--gold-soft);border-radius:6px;padding:4px 4px}
+@media (max-width:560px){
+  .duel{grid-template-columns:1fr}
+  .duel .vs{text-align:left}
+  .glabel{flex-direction:row;align-items:center}
+  .cols{grid-template-columns:1fr!important}
+}
+/* 표/히트맵 */
+.an-sec{margin-bottom:26px}
+.an-sec h2{font-family:"Black Han Sans",sans-serif;font-weight:400;font-size:22px;margin:0 0 4px}
+.an-sec p.d{margin:0 0 10px;color:var(--muted);font-size:13.5px}
+.scroll{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{background:var(--soft);font-weight:700;font-size:12.5px;color:var(--muted);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td.wk{font-family:"Black Han Sans",sans-serif;font-size:16px;white-space:nowrap}
+tr.cur td{background:var(--gold-soft)}
+.heat td,.heat th{text-align:center;padding:6px 4px;white-space:nowrap}
+.heat td.fn{text-align:left;padding-left:10px;white-space:normal;min-width:190px}
+.heat th.cw{background:var(--gold-soft);color:var(--ink)}
+.hc{display:block;width:100%;min-width:46px;border:0;border-radius:6px;padding:4px 0;line-height:1.25}
+.hc b{display:block;font-size:14px}
+.hc small{font-size:10.5px;opacity:.85}
+.h0{background:var(--soft);color:var(--muted)}
+.h1{background:var(--enemy-soft);color:var(--enemy)}
+.h2{background:color-mix(in srgb,var(--enemy) 35%,var(--panel));color:var(--ink)}
+.h3{background:var(--enemy);color:#fff}
+.stack{display:flex;flex-direction:column;gap:5px}
+.line{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.muted{color:var(--muted);font-size:12px}
+.gpick{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+select{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;max-width:100%}
+.ghead{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
+.ghead .nm{font-family:"Black Han Sans",sans-serif;font-size:26px}
+.insights{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 18px 6px 34px}
+.insights li{margin:8px 0}
+.mx td,.mx th{text-align:center;white-space:nowrap}
+.mx td.diag{background:var(--soft)}
+.mx td.hi{background:var(--gold-soft);font-weight:700}
+.ftab td{min-width:120px}
+.ftab .c4{display:flex;gap:4px;align-items:center;margin-bottom:3px}
+.ftab .c5{display:flex;gap:3px;align-items:center;flex-wrap:wrap}
+.hidden{display:none!important}
+.info{background:var(--panel);border:1px dashed var(--line);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--muted);margin-bottom:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>레이븐2 한국 리전 어비스 2~5층 매칭</h1>
+  <p class="sub">10월 21일(수) 점검 후 적용되는 공지 기준입니다. 4·5층은 10주 로테이션의 6주차이고, 지난 1~5주차는 보드에서 숨겼습니다. 길드별 아군/중립/적군 관계를 붙여서 같은 방에 누가 들어오는지 보여줍니다.</p>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-tab="floor">층별 매칭</button>
+    <button class="tab" role="tab" data-tab="brief">아군 브리핑</button>
+    <button class="tab" role="tab" data-tab="guild">길드별 일정</button>
+    <button class="tab" role="tab" data-tab="analysis">4·5층 로테이션 분석</button>
+  </div>
+
+  <div class="controls" id="ctl">
+    <div class="fl-only"><span class="ctl-label">층</span><span class="seg" id="floorSeg"></span></div>
+    <div class="weeknav wk-only">
+      <span class="ctl-label">4·5층 주차</span>
+      <button class="arrow" id="prev" aria-label="이전 주차">‹</button>
+      <div class="seg" id="weekSeg"></div>
+      <button class="arrow" id="next" aria-label="다음 주차">›</button>
+    </div>
+  </div>
+
+  <div class="legend" id="legend">
+    <span class="g rA">길드<i>아군</i></span>
+    <span class="g rN">길드<i>중립</i></span>
+    <span class="g rE">길드<i>적군</i></span>
+    <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--enemy)"></span> 주차 버튼의 점 = 적용 중인 주차</span>
+  </div>
+
+  <div class="info" id="nowinfo"></div>
+  <section id="p-floor"></section>
+
+  <section id="p-brief" class="hidden">
+    <div class="an-sec">
+      <h2>2·3층 아군 현황 (10/21~)</h2>
+      <p class="d">10월 21일(수) 점검 후 적용되는 서버 매칭 기준입니다.</p>
+      <div class="scroll"><table id="b23"></table></div>
+    </div>
+    <div class="an-sec">
+      <h2 id="h4">4층 · 같은 방 적군 수</h2>
+      <p class="d">남은 주차 기준입니다. 세력별로 4층 방에 함께 들어오는 적군 길드 수입니다. 아래 작은 숫자는 아군 길드 수. 칸을 누르면 그 주 층별 매칭으로 이동합니다.</p>
+      <div class="scroll"><table class="heat" id="heat4"></table></div>
+    </div>
+    <div class="an-sec">
+      <h2 id="h5">5층 · 같은 방 적군 수</h2>
+      <p class="d">같은 기준으로 5층 방을 셌습니다.</p>
+      <div class="scroll"><table class="heat" id="heat5"></table></div>
+    </div>
+  </section>
+
+  <section id="p-guild" class="hidden">
+    <div class="gpick"><label for="gsel" class="ctl-label">길드 선택</label><select id="gsel"></select></div>
+    <div id="ghead" class="ghead"></div>
+    <div class="an-sec"><h2>2·3층 (10/21~)</h2><div class="grid" id="g23"></div></div>
+    <div class="an-sec"><h2>4·5층 남은 일정</h2><p class="d">같은 방에 들어오는 아군·적군 길드입니다. 선택한 길드는 <b>내 길드</b> 표시가 붙습니다. 중립은 수만 셉니다.</p><div class="scroll"><table id="gtable"></table></div></div>
+  </section>
+
+  <section id="p-analysis" class="hidden">
+    <div class="an-sec"><h2>한눈에 보는 특징</h2><ul class="insights" id="insights"></ul></div>
+    <div class="an-sec"><h2>세력별 남은 일정</h2><p class="d">위: 4층 같은 방 세력 / 아래: 5층 그룹 번호와 같은 방 세력</p><div class="scroll"><table class="ftab" id="ftab"></table></div></div>
+    <div class="an-sec"><h2>4층 같은 방 주차 (남은 기간)</h2><div class="scroll"><table class="mx" id="mx4"></table></div></div>
+    <div class="an-sec"><h2>5층 같은 방 횟수 (남은 기간)</h2><div class="scroll"><table class="mx" id="mx5"></table></div></div>
+  </section>
+</div>
+
+<script>
+const FACTIONS=['피데스','호노르','모르스','돌로르','살루스','메투스'];
+const FC={'피데스':'#d9437a','호노르':'#e2702a','모르스':'#3b64d8','돌로르':'#1497c6','살루스':'#2b9a52','메투스':'#8456cf'};
+const SERVERS=['럭스','녹스','비타','마레','솔라'];
+const REL={A:'아군',N:'중립',E:'적군'};
+const GL=[
+['럭스','피데스','엄마만세','A'],['럭스','피데스','아빠만세','A'],['럭스','피데스','지옥','E'],
+['럭스','모르스','Hi','A'],['럭스','모르스','Hi2','A'],
+['럭스','살루스','ROYAL원조쿠키','A'],['럭스','살루스','ROYAL크림','A'],['럭스','살루스','ROYAL쿠키','A'],
+['럭스','호노르','로얄화이트','A'],['럭스','호노르','로얄화이트2','A'],
+['럭스','메투스','ROYAL레인보우','A'],
+['럭스','돌로르','하이B','A'],['럭스','돌로르','하이C','A'],
+
+['녹스','피데스','기적','E'],
+['녹스','모르스','TOP','E'],['녹스','모르스','TФP','E'],
+['녹스','살루스','낭만v','E'],['녹스','살루스','노빠끄','E'],['녹스','살루스','로얄다내꺼','A'],
+['녹스','호노르','아이엠','E'],['녹스','호노르','제주도민','E'],
+['녹스','메투스','SKZone','N'],['녹스','메투스','운명','N'],
+['녹스','돌로르','AEGIS','A'],['녹스','돌로르','AEGIS2','A'],['녹스','돌로르','퐁당','A'],['녹스','돌로르','AEGIS3','A'],['녹스','돌로르','라온A','A'],
+
+['비타','피데스','팬클럽','N'],
+['비타','모르스','괴짜군단','N'],
+['비타','살루스','TOP 스타벅스','E'],['비타','살루스','TOP Zenith','E'],
+['비타','호노르','휴게소','N'],
+['비타','메투스','무궁화','N'],
+['비타','돌로르','TOP Cantata','E'],['비타','돌로르','TOP Maxim','E'],
+
+['마레','피데스','페가수스','N'],['마레','피데스','페가소스','N'],
+['마레','모르스','앵그리빡빡','A'],['마레','모르스','ROYAL레인보우','A'],['마레','모르스','빌런','E'],
+['마레','살루스','TOP(투베)','E'],['마레','살루스','늘그니빡빡','A'],
+['마레','호노르','베테랑707','A'],['마레','호노르','베테랑708','A'],['마레','호노르','칼퇴근','E'],['마레','호노르','칼군무','E'],
+['마레','메투스','무신','A'],['마레','메투스','무신A','A'],['마레','메투스','무신B','A'],
+['마레','돌로르','발렌타인AG','A'],['마레','돌로르','발렌타인A','A'],['마레','돌로르','농사마을','A'],
+
+['솔라','피데스','봄향기','N'],
+['솔라','모르스','제발','N'],
+['솔라','살루스','라온B','A'],['솔라','살루스','순대리아','A'],['솔라','살루스','KINGDOM','A'],
+['솔라','호노르','발렌타인','A'],
+['솔라','메투스','AURA','A'],['솔라','메투스','AURA2','A'],
+['솔라','돌로르','라온C','A'],['솔라','돌로르','L평화','E'],
+];
+// 2층: 매칭별 3그룹, [서버, 세력, 서버, 세력]
+const F2=[
+ {m:1,g:[['럭스','모르스','마레','돌로르'],['럭스','메투스','마레','살루스'],['럭스','돌로르','마레','호노르']]},
+ {m:2,g:[['럭스','피데스','솔라','돌로르'],['럭스','살루스','솔라','메투스'],['럭스','호노르','솔라','모르스']]},
+ {m:3,g:[['마레','피데스','솔라','호노르'],['마레','모르스','솔라','피데스'],['마레','메투스','솔라','살루스']]},
+ {m:4,g:[['녹스','모르스','비타','돌로르'],['녹스','메투스','비타','살루스'],['녹스','피데스','비타','모르스']]},
+ {m:5,g:[['녹스','돌로르','비타','호노르'],['녹스','호노르','비타','피데스'],['녹스','살루스','비타','메투스']]},
+];
+// 3층: 6그룹, 서버별 3세력
+const F3=[
+ [['럭스',['모르스','메투스','돌로르']],['마레',['돌로르','살루스','호노르']]],
+ [['럭스',['피데스','살루스','호노르']],['솔라',['돌로르','메투스','모르스']]],
+ [['마레',['피데스','모르스','메투스']],['솔라',['호노르','피데스','살루스']]],
+ [['녹스',['모르스','메투스','피데스']],['비타',['돌로르','살루스','모르스']]],
+ [['녹스',['돌로르','호노르','살루스']],['비타',['호노르','피데스','메투스']]],
+];
+// 4·5층: 6개 서버 전체, 주차별 세력 조합
+const F4=[
+ [['피데스','호노르'],['모르스','돌로르'],['살루스','메투스']],
+ [['피데스','메투스'],['모르스','살루스'],['호노르','돌로르']],
+ [['피데스','모르스'],['호노르','메투스'],['살루스','돌로르']],
+ [['피데스','호노르'],['모르스','살루스'],['메투스','돌로르']],
+ [['피데스','메투스'],['살루스','호노르'],['모르스','돌로르']],
+ [['피데스','살루스'],['모르스','호노르'],['메투스','돌로르']],
+ [['피데스','돌로르'],['살루스','호노르'],['모르스','메투스']],
+ [['피데스','살루스'],['모르스','메투스'],['호노르','돌로르']],
+ [['피데스','모르스'],['살루스','돌로르'],['호노르','메투스']],
+ [['피데스','돌로르'],['모르스','호노르'],['살루스','메투스']],
+];
+const F5=[
+ [['피데스','모르스','살루스'],['호노르','메투스','돌로르']],
+ [['피데스','살루스','돌로르'],['모르스','호노르','메투스']],
+ [['피데스','메투스','돌로르'],['모르스','살루스','호노르']],
+ [['피데스','모르스','메투스'],['살루스','호노르','돌로르']],
+ [['피데스','호노르','돌로르'],['모르스','살루스','메투스']],
+ [['피데스','호노르','메투스'],['모르스','살루스','돌로르']],
+ [['피데스','살루스','메투스'],['모르스','호노르','돌로르']],
+ [['피데스','모르스','호노르'],['살루스','메투스','돌로르']],
+ [['피데스','살루스','호노르'],['모르스','메투스','돌로르']],
+ [['피데스','모르스','메투스'],['살루스','호노르','돌로르']],
+];
+// 1주차 = 9월 16일(수) 점검 후 ~ 9월 23일(수) 점검 전, 이후 매주 수요일 점검 기준
+const WSTART=new Date('2026-09-16T10:00:00+09:00').getTime();
+const WEEK=7*864e5;
+const NOW_WEEK=Math.min(9,Math.max(0,Math.floor((Date.now()-WSTART)/WEEK)));
+const CUR=5;  // 10/21(수) 점검 후 적용되는 4·5층 로테이션 주차 (6주차)
+const WKS=Array.from({length:10},(_,i)=>i).filter(i=>i>=CUR);  // 지난 주차는 숨김
+const NW=WKS.length;
+const P23='10월 21일(수) 점검 후 ~ 10월 28일(수) 점검 전 (1주)';
+const P3='10월 14일(수) 점검 후 ~ 10월 28일(수) 점검 전 (2주 중 둘째 주)';
+const PW='10월 14일(수) 점검 후 ~ 11월 11일(수) 점검 전 (4주)';
+const MERGE='한국 리전은 10월 14일 케럼·비타 통합 이후 럭스·녹스·비타·마레·솔라 5개 서버로 운영됩니다.';
+const fmtD=t=>{const d=new Date(t+9*36e5);return `${d.getUTCMonth()+1}월 ${d.getUTCDate()}일(${'일월화수목금토'[d.getUTCDay()]})`;};
+const weekRange=i=>`${fmtD(WSTART+i*WEEK)} 점검 후 ~ ${fmtD(WSTART+(i+1)*WEEK)} 점검 전`;
+const G=GL.map(([sv,f,n,r,mg],id)=>({id,sv,f,n,r,mg:mg||''}));
+const MERGED_FROM='케럼', MERGED_TO='비타';
+const svName=g=>g.mg?`${g.mg}(구 ${g.sv})`:g.sv;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const chip=(f,sm)=>`<span class="fc${sm?' sm':''}" style="--c:${FC[f]}">${f}</span>`;
+const svt=s=>`<span class="sv">${s}</span>`;
+const pill=(g,showSv,me)=>`<span class="g r${g.r}${me?' selfg':''}">${me?'<b class="meb">내 길드</b>':''}${esc(g.n)}${showSv?`<small>${svName(g)}</small>`:''}<i>${REL[g.r]}</i></span>`;
+const unitG=(sv,f)=>G.filter(g=>g.sv===sv&&g.f===f);
+const glist=(l,showSv,selfId)=>`<div class="gl">${l.map(g=>pill(g,showSv,selfId!=null&&g.id===selfId)).join('')}</div>`;
+const hasA=l=>l.some(g=>g.r==='A'), hasE=l=>l.some(g=>g.r==='E');
+const TYPE={clash:'아군끼리',enemy:'아군 vs 적군',neutral:'아군 vs 중립'};
+function duelType(A,B){const a=hasA(A),b=hasA(B);if(!a&&!b)return null;if(a&&b)return 'clash';const o=a?B:A;return hasE(o)?'enemy':'neutral';}
+const badge=t=>t?`<span class="badge t-${t}">${TYPE[t]}</span>`:'';
+function rbar(list){
+  const c={A:0,N:0,E:0};list.forEach(g=>c[g.r]++);const t=list.length||1;
+  return `<div class="rbar"><span class="a">아군 ${c.A}</span><span class="n">중립 ${c.N}</span><span class="e">적군 ${c.E}</span><span class="bar"><i style="width:${c.A/t*100}%;background:var(--ally)"></i><i style="width:${c.N/t*100}%;background:var(--line)"></i><i style="width:${c.E/t*100}%;background:var(--enemy)"></i></span></div>`;
+}
+// 방 구성
+const room2=(grp)=>[...unitG(grp[0],grp[1]),...unitG(grp[2],grp[3])];
+const room3=(grp)=>grp.flatMap(([sv,fs])=>fs.flatMap(f=>unitG(sv,f)));
+const roomF=(fs)=>G.filter(g=>fs.includes(g.f));
+const find2=(g)=>{for(const m of F2)for(let i=0;i<3;i++){const x=m.g[i];if((x[0]===g.sv&&x[1]===g.f)||(x[2]===g.sv&&x[3]===g.f))return {m:m.m,i,grp:x};}};
+const find3=(g)=>F3.findIndex(grp=>grp.some(([sv,fs])=>sv===g.sv&&fs.includes(g.f)));
+
+let st={tab:'floor',floor:'all',week:CUR,g:0};
+try{const s=JSON.parse(localStorage.getItem('abyssBoard3')||'null');if(s){st=Object.assign(st,s);st.week=CUR;}}catch(e){}
+const save=()=>{try{localStorage.setItem('abyssBoard3',JSON.stringify(st));}catch(e){}};
+function segButtons(el,items,cur,onPick,nowV){
+  el.innerHTML=items.map(([v,l,t])=>`<button aria-pressed="${String(v)===String(cur)}" class="${String(v)===String(nowV)?'now':''}" data-v="${v}"${t?` title="${t}"`:''}>${l}</button>`).join('');
+  el.querySelectorAll('button').forEach(b=>b.onclick=()=>onPick(b.dataset.v));
+}
+function renderControls(){
+  segButtons(document.getElementById('floorSeg'),[['all','전체'],['2','2층'],['3','3층'],['4','4층'],['5','5층']],st.floor,v=>{st.floor=v;renderAll();});
+  segButtons(document.getElementById('weekSeg'),WKS.map(i=>[i,`${i+1}주`,weekRange(i)]),st.week,v=>{st.week=+v;renderAll();},CUR);
+  const t=st.tab;
+  document.querySelector('.fl-only').classList.toggle('hidden',t!=='floor');
+  document.querySelector('.wk-only').classList.toggle('hidden',!(t==='floor'&&(st.floor==='all'||st.floor==='4'||st.floor==='5')) && t!=='brief' && t!=='analysis');
+  document.getElementById('ctl').classList.toggle('hidden',t==='guild');
+  document.getElementById('legend').classList.toggle('hidden',t==='analysis');
+}
+
+/* ---------- 층별 매칭 ---------- */
+function unitBlock(sv,f,opts={}){
+  const l=unitG(sv,f);
+  return `<div class="unit"><div class="unit-h">${svt(sv)}${chip(f,1)}</div>${glist(l)}</div>`;
+}
+function floor2(){
+  return `<div class="floor-sec" style="--fl:var(--f2)"><div class="floor-h"><h2>어비스 2층</h2><span class="note">${P23} · 럭스·마레·솔라가 서로 섞이고 녹스×비타가 2매칭 · 서버-세력 1:1</span></div><div class="grid">`+
+  F2.map(m=>{const svs=[m.g[0][0],m.g[0][2]];const all=m.g.flatMap(room2);
+    return `<article class="card" style="--fl:var(--f2)"><div class="card-h"><span class="mt">매칭 ${m.m}</span><span class="svs">${svs.join(' × ')}</span>${rbar(all)}</div><div class="card-b">`+
+    m.g.map((x,i)=>`<div class="duel"><div class="glabel">${i+1}그룹${badge(duelType(unitG(x[0],x[1]),unitG(x[2],x[3])))}</div>${unitBlock(x[0],x[1])}<div class="vs">VS</div>${unitBlock(x[2],x[3])}</div>`).join('')+
+    `</div></article>`;}).join('')+`</div></div>`;
+}
+function floor3(){
+  return `<div class="floor-sec" style="--fl:var(--f3)"><div class="floor-h"><h2>어비스 3층</h2><span class="note">${P3} · 세력 구성은 지난주와 동일, 서버 내 짝만 변경 · 월드 그룹 ${PW} · 서버 2개 × 세력 3개가 한 방</span></div><div class="grid">`+
+  F3.map((grp,i)=>`<article class="card" style="--fl:var(--f3)"><div class="card-h"><span class="mt">${i+1}그룹</span><span class="svs">${grp.map(x=>x[0]).join(' × ')}</span>${rbar(room3(grp))}</div><div class="card-b"><div class="cols" style="grid-template-columns:1fr 1fr">`+
+    grp.map(([sv,fs])=>`<div><div class="col-h">${svt(sv)}</div>${fs.map(f=>`<div class="urow"><span class="lab">${chip(f,1)}</span>${glist(unitG(sv,f))}</div>`).join('')}</div>`).join('')+
+    `</div></div></article>`).join('')+`</div></div>`;
+}
+function floorF(n,sched){
+  const w=st.week, groups=sched[w];
+  const note=`${w+1}주차${w===CUR?' (적용 중)':''} · ${weekRange(w)} · 5개 서버 전체 · 세력 ${groups[0].length}개가 한 방`;
+  return `<div class="floor-sec" style="--fl:var(--f${n})"><div class="floor-h"><h2>어비스 ${n}층</h2><span class="note">${note}</span></div><div class="grid ${n===5?'wide':''}">`+
+  groups.map((fs,i)=>`<article class="card" style="--fl:var(--f${n})"><div class="card-h"><span class="mt">${i+1}그룹</span><span class="svs" style="display:flex;gap:4px">${fs.map(f=>chip(f,1)).join('')}</span>${rbar(roomF(fs))}</div><div class="card-b"><div class="cols" style="grid-template-columns:repeat(${fs.length},1fr)">`+
+    fs.map(f=>`<div><div class="col-h">${chip(f)}</div>${SERVERS.map(sv=>`<div class="urow"><span class="lab">${svt(sv)}</span>${glist(unitG(sv,f))}</div>`).join('')}</div>`).join('')+
+    `</div></div></article>`).join('')+`</div></div>`;
+}
+function renderFloor(){
+  const f=st.floor;let h='';
+  if(f==='all'||f==='2')h+=floor2();
+  if(f==='all'||f==='3')h+=floor3();
+  if(f==='all'||f==='4')h+=floorF(4,F4);
+  if(f==='all'||f==='5')h+=floorF(5,F5);
+  document.getElementById('p-floor').innerHTML=h;
+}
+
+/* ---------- 아군 브리핑 ---------- */
+function renderBrief(){
+  const allies=G.filter(g=>g.r==='A');
+  let t=`<thead><tr><th>아군 길드</th><th>2층 그룹</th><th>2층 상대</th><th>3층 그룹</th><th>3층 같은 방 적군</th><th>3층 같은 방 아군</th></tr></thead><tbody>`;
+  allies.forEach(g=>{
+    const p=find2(g);const opp=p.grp[0]===g.sv&&p.grp[1]===g.f?[p.grp[2],p.grp[3]]:[p.grp[0],p.grp[1]];
+    const oppG=unitG(...opp);const own=unitG(g.sv,g.f).filter(x=>x.id!==g.id);
+    const i3=find3(g);const r3=room3(F3[i3]).filter(x=>x.id!==g.id);
+    const E3=r3.filter(x=>x.r==='E'),A3=r3.filter(x=>x.r==='A');
+    t+=`<tr><td><div class="line">${chip(g.f,1)}${svt(g.sv)}<b>${esc(g.n)}</b></div></td>
+      <td>매칭${p.m} ${p.i+1}그룹<br>${badge(duelType(unitG(g.sv,g.f),oppG))}</td>
+      <td><div class="line">${svt(opp[0])}${chip(opp[1],1)}</div>${glist(oppG)}${own.length?`<div class="muted" style="margin-top:4px">같은 칸: ${own.map(x=>esc(x.n)+'('+REL[x.r]+')').join(', ')}</div>`:''}</td>
+      <td>${i3+1}그룹<div class="muted">${F3[i3].map(x=>x[0]).join('×')}</div></td>
+      <td>${E3.length?glist(E3,1):'<span class="muted">없음</span>'}</td>
+      <td>${A3.length?glist(A3,1):'<span class="muted">없음</span>'}</td></tr>`;
+  });
+  document.getElementById('b23').innerHTML=t+'</tbody>';
+
+  const heat=(sched)=>{
+    let h=`<thead><tr><th style="text-align:left">세력 (아군 길드)</th>${WKS.map(i=>`<th class="${i===st.week?'cw':''}">${i+1}주${i===CUR?' ●':''}</th>`).join('')}</tr></thead><tbody>`;
+    FACTIONS.forEach(f=>{
+      const al=allies.filter(g=>g.f===f);
+      h+=`<tr><td class="fn">${chip(f,1)} <span class="muted">${al.map(g=>esc(g.n)).join(', ')||'아군 없음'}</span></td>`;
+      for(const w of WKS){
+        const fs=sched[w].find(x=>x.includes(f));const room=roomF(fs);
+        const E=room.filter(g=>g.r==='E'),A=room.filter(g=>g.r==='A');
+        const cls=E.length===0?'h0':E.length<=2?'h1':E.length<=4?'h2':'h3';
+        h+=`<td><button class="hc ${cls}" data-w="${w}" title="${w+1}주 · ${fs.join('+')} 방 · 적군: ${esc(E.map(g=>g.sv+' '+g.n).join(', ')||'없음')}"><b>적 ${E.length}</b><small>아 ${A.length}</small></button></td>`;
+      }
+      h+='</tr>';
+    });
+    return h+'</tbody>';
+  };
+  document.getElementById('heat4').innerHTML=heat(F4);
+  document.getElementById('heat5').innerHTML=heat(F5);
+  document.querySelectorAll('.hc').forEach(b=>b.onclick=()=>{st.week=+b.dataset.w;st.tab='floor';renderAll();window.scrollTo({top:0,behavior:'smooth'});});
+}
+
+/* ---------- 길드별 ---------- */
+function buildSelect(){
+  const sel=document.getElementById('gsel');
+  sel.innerHTML=SERVERS.map(sv=>`<optgroup label="${sv}">${G.filter(g=>g.sv===sv).map(g=>`<option value="${g.id}">[${REL[g.r]}] ${esc(g.n)} — ${g.f}</option>`).join('')}</optgroup>`).join('');
+  sel.onchange=()=>{st.g=+sel.value;renderAll();};
+}
+function renderGuild(){
+  const g=G[st.g]||G[0];document.getElementById('gsel').value=g.id;
+  document.getElementById('ghead').innerHTML=`<span class="nm">${esc(g.n)}</span>${chip(g.f)}${svt(g.sv)}<span class="g r${g.r}"><i>${REL[g.r]}</i></span>`;
+  const p=find2(g);const i3=find3(g);
+  const c2=`<article class="card" style="--fl:var(--f2)"><div class="card-h"><span class="mt">2층</span><span class="svs">매칭 ${p.m} · ${p.i+1}그룹</span></div><div class="card-b"><div class="duel" style="grid-template-columns:1fr 30px 1fr">${unitBlock(p.grp[0],p.grp[1])}<div class="vs">VS</div>${unitBlock(p.grp[2],p.grp[3])}</div></div></article>`;
+  const c3=`<article class="card" style="--fl:var(--f3)"><div class="card-h"><span class="mt">3층</span><span class="svs">${i3+1}그룹 · ${F3[i3].map(x=>x[0]).join('×')}</span>${rbar(room3(F3[i3]).filter(x=>x.id!==g.id))}</div><div class="card-b"><div class="cols" style="grid-template-columns:1fr 1fr">`+
+    F3[i3].map(([sv,fs])=>`<div><div class="col-h">${svt(sv)}</div>${fs.map(f=>`<div class="urow ${sv===g.sv&&f===g.f?'me':''}"><span class="lab">${chip(f,1)}</span>${glist(unitG(sv,f))}</div>`).join('')}</div>`).join('')+`</div></div></article>`;
+  document.getElementById('g23').innerHTML=c2+c3;
+  const cell=(room)=>{
+    const A=room.filter(x=>x.r==='A'),E=room.filter(x=>x.r==='E'),N=room.filter(x=>x.r==='N');
+    const nSelf=N.filter(x=>x.id===g.id);
+    return [
+      `<td>${A.length?glist(A,1,g.id):'<span class="muted">없음</span>'}</td>`,
+      `<td>${E.length?glist(E,1,g.id):'<span class="muted">없음</span>'}</td>`,
+      `<td>${nSelf.length?glist(nSelf,1,g.id):''}<span class="muted">${N.length}곳</span></td>`];};
+  let rows='';
+  for(const w of WKS){
+    const i4=F4[w].findIndex(x=>x.includes(g.f)),i5=F5[w].findIndex(x=>x.includes(g.f));
+    const c4=cell(roomF(F4[w][i4])),c5=cell(roomF(F5[w][i5]));
+    rows+=`<tr class="${w===CUR?'cur':''}"><td class="wk">${w+1}주</td><td><div class="stack"><span class="muted">${i4+1}그룹</span><div class="line">${F4[w][i4].map(f=>chip(f,1)).join('')}</div></div></td>${c4.join('')}<td><div class="stack"><span class="muted">${i5+1}그룹</span><div class="line">${F5[w][i5].map(f=>chip(f,1)).join('')}</div></div></td>${c5.join('')}</tr>`;
+  }
+  document.getElementById('gtable').innerHTML=`<thead><tr><th>주차</th><th>4층 방</th><th>4층 아군</th><th>4층 적군</th><th>중립</th><th>5층 방</th><th>5층 아군</th><th>5층 적군</th><th>중립</th></tr></thead><tbody>${rows}</tbody>`;
+}
+
+/* ---------- 분석 ---------- */
+function renderAnalysis(){
+  let fh=`<thead><tr><th>주차</th>${FACTIONS.map(f=>`<th>${chip(f,1)}</th>`).join('')}</tr></thead><tbody>`;
+  for(const w of WKS){
+    fh+=`<tr class="${w===st.week?'cur':''}"><td class="wk">${w+1}주</td>${FACTIONS.map(f=>{
+      const o=F4[w].find(p=>p.includes(f)).find(x=>x!==f);const ti=F5[w].findIndex(t=>t.includes(f));
+      return `<td><div class="c4"><span class="muted">4층</span>${chip(o,1)}</div><div class="c5"><span class="muted">5층 ${ti+1}그룹</span>${F5[w][ti].filter(x=>x!==f).map(x=>chip(x,1)).join('')}</div></td>`;}).join('')}</tr>`;
+  }
+  document.getElementById('ftab').innerHTML=fh+'</tbody>';
+  const key=(a,b)=>[a,b].sort().join('|');const meet4={},co5={};
+  WKS.forEach(w=>F4[w].forEach(p=>{(meet4[key(...p)]=meet4[key(...p)]||[]).push(w+1);}));
+  WKS.forEach(w=>F5[w].forEach(t=>{for(let i=0;i<3;i++)for(let j=i+1;j<3;j++){(co5[key(t[i],t[j])]=co5[key(t[i],t[j])]||[]).push(w+1);}}));
+  const head=`<thead><tr><th></th>${FACTIONS.map(f=>`<th>${chip(f,1)}</th>`).join('')}</tr></thead>`;
+  document.getElementById('mx4').innerHTML=head+'<tbody>'+FACTIONS.map(a=>`<tr><th>${chip(a,1)}</th>${FACTIONS.map(b=>a===b?'<td class="diag">—</td>':`<td>${(meet4[key(a,b)]||[]).join('·')}주</td>`).join('')}</tr>`).join('')+'</tbody>';
+  const mx=Math.max(...Object.values(co5).map(v=>v.length));
+  document.getElementById('mx5').innerHTML=head+'<tbody>'+FACTIONS.map(a=>`<tr><th>${chip(a,1)}</th>${FACTIONS.map(b=>{if(a===b)return '<td class="diag">—</td>';const v=co5[key(a,b)]||[];return `<td class="${v.length&&v.length===mx?'hi':''}"><b>${v.length}회</b><div class="muted">${v.length?v.join('·')+'주':'없음'}</div></td>`;}).join('')}</tr>`).join('')+'</tbody>';
+
+  const ins=[];
+  ins.push('2층은 3층 그룹을 서버-세력 1:1로 쪼갠 구조입니다. 3층 한 그룹(서버 2개 × 세력 3개)이 2층에서는 매칭 하나의 1~3그룹으로 나뉩니다.');
+  ins.push('4·5층은 5개 서버가 모두 한 방에 들어오고, 방은 세력으로만 나뉩니다. 같은 세력이면 서버가 달라도 같은 방입니다.');
+  ins.push(`아래 표와 히트맵은 <b>남은 ${NW}주(${CUR+1}~10주차)</b>만 보여줍니다. 지난 주차는 숨겼습니다.`);
+  const same=(A,B)=>{const s=x=>x.map(p=>[...p].sort().join('+')).sort().join('/');return s(A)===s(B);};
+  const dup=arr=>{const r=[];for(let a=0;a<NW;a++)for(let b=a+1;b<NW;b++)if(same(arr[WKS[a]],arr[WKS[b]]))r.push(`${WKS[a]+1}주차 = ${WKS[b]+1}주차`);return r;};
+  const d4=dup(F4),d5=dup(F5);
+  if(d4.length) ins.push(`남은 기간 중 4층 구성이 같은 주차: <b>${d4.join(', ')}</b>`);
+  if(d5.length) ins.push(`남은 기간 중 5층 구성이 같은 주차: <b>${d5.join(', ')}</b>`);
+  if(WKS.every(w=>F5[w][0].includes('피데스'))) ins.push(`5층에서 ${chip('피데스',1)} 는 남은 기간 내내 1그룹입니다.`);
+  // 적군이 가장 많은/적은 주
+  const enemyIn=(fs)=>roomF(fs).filter(g=>g.r==='E').length;
+  const allyRooms=(sched,w)=>sched[w].map(fs=>({fs,E:enemyIn(fs),A:roomF(fs).filter(g=>g.r==='A').length}));
+  const r3=F3.map((grp,i)=>({i,E:room3(grp).filter(g=>g.r==='E').length,A:room3(grp).filter(g=>g.r==='A').length}));
+  ins.push(`3층에서 적군이 가장 많은 방: ${r3.filter(x=>x.E===Math.max(...r3.map(y=>y.E))).map(x=>`<b>${x.i+1}그룹</b>(적군 ${x.E}, 아군 ${x.A})`).join(', ')}`);
+  document.getElementById('insights').innerHTML=ins.map(x=>`<li>${x}</li>`).join('');
+}
+
+function renderNow(){
+  document.getElementById('nowinfo').innerHTML=`<b style="color:var(--ink)">10월 21일(수) 점검 후 적용 · 4·5층은 로테이션 ${CUR+1}주차</b><br><span style="color:var(--enemy);font-weight:700">${MERGE}</span><br>어비스 2층 ${P23} · 어비스 3층 ${P3} (월드 그룹 ${PW}) · 어비스 4·5층 ${P23}`;
+}
+function renderAll(){
+  renderNow();
+  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.tab===st.tab)));
+  ['floor','brief','guild','analysis'].forEach(t=>document.getElementById('p-'+t).classList.toggle('hidden',t!==st.tab));
+  renderControls();renderFloor();renderBrief();renderGuild();renderAnalysis();save();
+}
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{st.tab=t.dataset.tab;renderAll();});
+const wstep=d=>{const i=WKS.indexOf(st.week);st.week=WKS[((i<0?0:i)+d+NW)%NW];renderAll();};
+document.getElementById('prev').onclick=()=>wstep(-1);
+document.getElementById('next').onclick=()=>wstep(1);
+buildSelect();if(!G[st.g])st.g=0;if(!WKS.includes(st.week))st.week=CUR;renderAll();
+</script>
+</body>
+</html>
