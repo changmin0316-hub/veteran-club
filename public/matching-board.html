@@ -330,9 +330,11 @@ const roomF=(fs)=>G.filter(g=>fs.includes(g.f));
 const find2=(g)=>{for(const m of F2)for(let i=0;i<3;i++){const x=m.g[i];if((x[0]===g.sv&&x[1]===g.f)||(x[2]===g.sv&&x[3]===g.f))return {m:m.m,i,grp:x};}};
 const find3=(g)=>F3.findIndex(grp=>grp.some(([sv,fs])=>sv===g.sv&&fs.includes(g.f)));
 
-let st={tab:'floor',floor:'all',week:CUR,g:0};
-try{const s=JSON.parse(localStorage.getItem('abyssBoard3')||'null');if(s){st=Object.assign(st,s);st.week=CUR;}}catch(e){}
-const save=()=>{try{localStorage.setItem('abyssBoard3',JSON.stringify(st));}catch(e){}};
+// 기본 선택 길드: 이름에 '베테랑'이 포함된 길드(없으면 첫 번째)
+const defaultGuildIdx=()=>{const i=G.findIndex(g=>g.n.includes('베테랑'));return i<0?0:i;};
+let st={tab:'guild',floor:'all',week:CUR,g:defaultGuildIdx()};
+try{const s=JSON.parse(localStorage.getItem('abyssBoard4')||'null');if(s){st=Object.assign(st,s);st.week=CUR;}}catch(e){}
+const save=()=>{try{localStorage.setItem('abyssBoard4',JSON.stringify(st));}catch(e){}};
 function segButtons(el,items,cur,onPick,nowV){
   el.innerHTML=items.map(([v,l,t])=>`<button aria-pressed="${String(v)===String(cur)}" class="${String(v)===String(nowV)?'now':''}" data-v="${v}"${t?` title="${t}"`:''}>${l}</button>`).join('');
   el.querySelectorAll('button').forEach(b=>b.onclick=()=>onPick(b.dataset.v));
@@ -508,7 +510,7 @@ buildSelect();if(!G[st.g])st.g=0;if(!WKS.includes(st.week))st.week=CUR;renderAll
     const d=await res.json();
     if(Array.isArray(d.gl)&&d.gl.length){
       G=d.gl.map(([sv,f,n,r],id)=>({id,sv,f,n,r,mg:''}));
-      st.g=0;buildSelect();renderAll();
+      st.g=defaultGuildIdx();buildSelect();renderAll();
     }
   }catch(e){}
 })();
