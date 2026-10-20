@@ -91,9 +91,20 @@ const JOB_SHORT: Record<string, string> = {
   어쌔신: "어쌔",
 };
 const shortJob = (j: string) => JOB_SHORT[j] ?? j;
+// 군(소속) 색상 (order 기준 순환)
+const GUILD_CLS = [
+  "text-sky-400",
+  "text-rose-400",
+  "text-amber-400",
+  "text-violet-400",
+  "text-emerald-400",
+];
+const guildCls = (order?: number) =>
+  order ? GUILD_CLS[(order - 1) % GUILD_CLS.length] : "text-neutral-500";
 
 type SortKey =
   | "name"
+  | "guild"
   | "attack"
   | "defense"
   | "accuracy"
@@ -161,14 +172,16 @@ export default function UsersClient({
     );
     // 관리자/운영진은 항상 상단 (직책순). 그 안에서 정렬/이름순 적용
     const dir = sort ? (sort.dir === "asc" ? 1 : -1) : 1;
-    const val = (r: MemberRow) =>
+    const val = (r: MemberRow): string | number =>
       !sort
         ? r.name
         : sort.key === "name"
           ? r.name
-          : sort.key === "total"
-            ? r.attack + r.defense + r.accuracy
-            : r[sort.key];
+          : sort.key === "guild"
+            ? guilds.find((g) => g.id === r.guildId)?.order ?? 999
+            : sort.key === "total"
+              ? r.attack + r.defense + r.accuracy
+              : r[sort.key];
     return [...filtered].sort((a, b) => {
       const rr = ROLE_RANK[b.role] - ROLE_RANK[a.role];
       if (rr !== 0) return rr;
@@ -178,7 +191,7 @@ export default function UsersClient({
         return va.localeCompare(vb) * dir;
       return ((va as number) - (vb as number)) * dir;
     });
-  }, [rows, activeGuild, search, sort]);
+  }, [rows, activeGuild, search, sort, guilds]);
 
   function toggleSort(key: SortKey) {
     setSort((prev) =>
@@ -561,7 +574,7 @@ export default function UsersClient({
                 </button>
               </th>
               <Th>직업</Th>
-              <Th>소속</Th>
+              <SortTh label="소속" k="guild" sort={sort} onSort={toggleSort} />
               {bosses.map((b) => (
                 <th key={b.id} className="px-0.5 py-2 align-bottom">
                   <div className="mx-auto flex h-16 w-5 items-end justify-center">
@@ -674,7 +687,7 @@ export default function UsersClient({
                             guildId: e.target.value ? Number(e.target.value) : null,
                           })
                         }
-                        className={`${cellInput} w-16`}
+                        className={`${cellInput} w-16 font-semibold ${guildCls(g?.order)}`}
                         title={g ? `${g.order}군 - ${g.name}` : "미지정"}
                       >
                         <option value="">미지정</option>
@@ -685,7 +698,7 @@ export default function UsersClient({
                         ))}
                       </select>
                     ) : (
-                      <span className="text-neutral-700">
+                      <span className={`font-semibold ${guildCls(g?.order)}`}>
                         {g ? `${g.order}군 - ${g.name}` : "-"}
                       </span>
                     )}
