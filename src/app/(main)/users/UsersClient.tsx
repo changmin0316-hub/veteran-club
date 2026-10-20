@@ -16,6 +16,8 @@ export interface MemberRow {
   accuracy: number;
   myth1: number;
   myth2: number;
+  skill1: boolean;
+  skill2: boolean;
   pvpKills: number;
   itemCollection: number;
   bossKills: Record<string, boolean>;
@@ -190,6 +192,8 @@ export default function UsersClient({
         o.accuracy !== r.accuracy ||
         o.myth1 !== r.myth1 ||
         o.myth2 !== r.myth2 ||
+        o.skill1 !== r.skill1 ||
+        o.skill2 !== r.skill2 ||
         o.pvpKills !== r.pvpKills ||
         bossKillsChanged(o.bossKills, r.bossKills, bosses)
       )
@@ -255,6 +259,8 @@ export default function UsersClient({
             accuracy: r.accuracy,
             myth1: r.myth1,
             myth2: r.myth2,
+            skill1: r.skill1,
+            skill2: r.skill2,
             pvpKills: r.pvpKills,
             bossKills: r.bossKills,
           }),
@@ -487,6 +493,12 @@ export default function UsersClient({
                   <th className="px-1 py-2.5 text-right text-[11px] font-semibold leading-tight text-neutral-500">
                     신화<br />사역마
                   </th>
+                  <th className="px-1 py-2.5 text-center text-[11px] font-semibold leading-tight text-neutral-500">
+                    스킬<br />1전스
+                  </th>
+                  <th className="px-1 py-2.5 text-center text-[11px] font-semibold leading-tight text-neutral-500">
+                    스킬<br />2전스
+                  </th>
                   <Th right>쟁탈전</Th>
                   <SortTh label="공격" k="attack" sort={sort} onSort={toggleSort} />
                   <SortTh label="방어" k="defense" sort={sort} onSort={toggleSort} />
@@ -612,6 +624,16 @@ export default function UsersClient({
                         disabled={!editable}
                         onChange={(v) => patch(r.id, { myth2: v })}
                       />
+                      <OXCell
+                        on={r.skill1}
+                        disabled={!editable}
+                        onToggle={() => patch(r.id, { skill1: !r.skill1 })}
+                      />
+                      <OXCell
+                        on={r.skill2}
+                        disabled={!editable}
+                        onToggle={() => patch(r.id, { skill2: !r.skill2 })}
+                      />
                       <NumCell
                         value={r.pvpKills}
                         disabled={!editable}
@@ -681,7 +703,7 @@ export default function UsersClient({
             {visible.length === 0 && (
               <tr>
                 <td
-                  colSpan={3 + bosses.length + (isManager ? 11 : 0)}
+                  colSpan={3 + bosses.length + (isManager ? 13 : 0)}
                   className="py-8 text-center text-neutral-400"
                 >
                   해당 군에 길드원이 없습니다.
@@ -774,6 +796,8 @@ function AddMemberModal({
         accuracy: m.accuracy,
         myth1: m.myth1 ?? 0,
         myth2: m.myth2 ?? 0,
+        skill1: m.skill1 ?? false,
+        skill2: m.skill2 ?? false,
         pvpKills: m.pvpKills ?? 0,
         itemCollection: m.itemCollection ?? 0,
         bossKills: {},
@@ -942,6 +966,37 @@ function GuildTab({
     >
       {children}
     </button>
+  );
+}
+
+// O/X 토글 셀 (1전스/2전스 등)
+function OXCell({
+  on,
+  disabled,
+  onToggle,
+}: {
+  on: boolean;
+  disabled: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <td className="px-1 py-1.5 text-center">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onToggle}
+        title={on ? "O (보유)" : "X (미보유)"}
+        className={[
+          "h-6 w-6 rounded text-xs font-bold",
+          on
+            ? "bg-emerald-500 text-white"
+            : "border border-neutral-300 bg-white text-neutral-400",
+          disabled ? "cursor-default" : "transition hover:opacity-80",
+        ].join(" ")}
+      >
+        {on ? "O" : "X"}
+      </button>
+    </td>
   );
 }
 

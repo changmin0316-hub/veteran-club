@@ -36,6 +36,8 @@ model Member {
   legendSkill  Boolean  @default(false) // 전설스킬 유무
   myth1        Int      @default(0) // 신화성의
   myth2        Int      @default(0) // 신화사역마
+  skill1       Boolean  @default(false) // 1전스 (O/X)
+  skill2       Boolean  @default(false) // 2전스 (O/X)
   pvpKills     Int      @default(0) // 쟁탈전 킬수
   itemCollection Float  @default(0) // 템컬렉(%) 예: 97.12
   bossKills    String   @default("{}") // 보스 처치 현황 JSON (명예의전당)

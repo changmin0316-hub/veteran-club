@@ -21,6 +21,8 @@ interface Profile {
   legendSkill: boolean;
   myth1: number;
   myth2: number;
+  skill1: boolean;
+  skill2: boolean;
   pvpKills: number;
   itemCollection: number;
   bossKills: Record<string, boolean>;
@@ -90,6 +92,8 @@ export default function UserClient({
         accuracy: form.accuracy,
         myth1: form.myth1,
         myth2: form.myth2,
+        skill1: form.skill1,
+        skill2: form.skill2,
         pvpKills: form.pvpKills,
         itemCollection: form.itemCollection,
         bossKills: form.bossKills,
@@ -227,6 +231,14 @@ export default function UserClient({
           <NumField label="명중" value={form.accuracy} onChange={(v) => set("accuracy", v)} />
         </div>
 
+        <div>
+          <p className="mb-2 text-xs font-semibold text-neutral-500">스킬 (전스)</p>
+          <div className="flex gap-2">
+            <OXField label="1전스" on={form.skill1} onToggle={() => set("skill1", !form.skill1)} />
+            <OXField label="2전스" on={form.skill2} onToggle={() => set("skill2", !form.skill2)} />
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
           <NumField label="신화성의" value={form.myth1} onChange={(v) => set("myth1", v)} />
           <NumField label="신화사역마" value={form.myth2} onChange={(v) => set("myth2", v)} />
@@ -336,6 +348,32 @@ function NumField({
         className={input}
       />
     </Field>
+  );
+}
+
+function OXField({
+  label,
+  on,
+  onToggle,
+}: {
+  label: string;
+  on: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className={[
+        "flex items-center gap-2 rounded border px-3 py-2 text-sm transition",
+        on
+          ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+          : "border-neutral-300 bg-white text-neutral-500 hover:bg-neutral-50",
+      ].join(" ")}
+    >
+      <span className="font-medium">{label}</span>
+      <span className="text-base font-bold">{on ? "O" : "X"}</span>
+    </button>
   );
 }
 

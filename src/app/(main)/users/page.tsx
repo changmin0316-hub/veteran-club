@@ -49,6 +49,8 @@ export default async function UsersPage() {
     accuracy: m.accuracy,
     myth1: m.myth1,
     myth2: m.myth2,
+    skill1: m.skill1,
+    skill2: m.skill2,
     pvpKills: m.pvpKills,
     itemCollection: m.itemCollection,
     bossKills: parseBossKills(m.bossKills),
