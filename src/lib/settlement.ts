@@ -12,6 +12,7 @@ export interface SettlementRow {
   extra: number; // 추가 분배금(수동 지급)
   share: number; // 분배금 (비율분배 + 추가분배금)
   excluded: boolean; // 분배 제외 여부
+  paid: boolean; // 분배금 선지급 완료 표시
   counts: Record<number, number>; // categoryId -> count
 }
 
@@ -33,7 +34,7 @@ export async function computeSettlement(
   const week = await prisma.week.findUnique({ where: { id: weekId } });
   if (!week) return null;
 
-  const [categories, members, records, exclusions, extraPays] =
+  const [categories, members, records, exclusions, extraPays, paidMarks] =
     await Promise.all([
       prisma.attendanceCategory.findMany({ orderBy: { sortOrder: "asc" } }),
       prisma.member.findMany({
@@ -43,11 +44,13 @@ export async function computeSettlement(
       prisma.attendanceRecord.findMany({ where: { weekId } }),
       prisma.settlementExclusion.findMany({ where: { weekId } }),
       prisma.extraPay.findMany({ where: { weekId } }),
+      prisma.settlementPaid.findMany({ where: { weekId } }),
     ]);
 
   const weightById = new Map(categories.map((c) => [c.id, c.weight]));
   const excludedSet = new Set(exclusions.map((e) => e.memberId));
   const extraById = new Map(extraPays.map((e) => [e.memberId, e.amount]));
+  const paidSet = new Set(paidMarks.map((p) => p.memberId));
 
   // 멤버별 카테고리 카운트 집계
   const countsByMember = new Map<number, Record<number, number>>();
@@ -98,6 +101,7 @@ export async function computeSettlement(
       extra,
       share: Math.floor(distributable * shareRatio) + extra,
       excluded: b.excluded,
+      paid: paidSet.has(b.member.id),
       counts: b.counts,
     };
   });

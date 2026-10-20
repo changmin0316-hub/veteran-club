@@ -19,10 +19,41 @@ export default function AdjustmentClient({
   const [diamond, setDiamond] = useState<number>(0);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [paidSet, setPaidSet] = useState<Set<number>>(new Set());
 
   useEffect(() => {
-    if (data) setDiamond(data.week.diamond);
+    if (data) {
+      setDiamond(data.week.diamond);
+      setPaidSet(new Set(data.rows.filter((r) => r.paid).map((r) => r.memberId)));
+    }
   }, [data]);
+
+  // 분배금 선지급 완료 표시 토글 (낙관적 업데이트 + 저장)
+  async function togglePaid(memberId: number) {
+    if (!weekId) return;
+    const next = !paidSet.has(memberId);
+    setPaidSet((prev) => {
+      const s = new Set(prev);
+      if (next) s.add(memberId);
+      else s.delete(memberId);
+      return s;
+    });
+    try {
+      await fetch(`/api/weeks/${weekId}/paid`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId, paid: next }),
+      });
+    } catch {
+      // 실패 시 되돌리기
+      setPaidSet((prev) => {
+        const s = new Set(prev);
+        if (next) s.delete(memberId);
+        else s.add(memberId);
+        return s;
+      });
+    }
+  }
 
   function flash(m: string) {
     setMsg(m);
@@ -178,6 +209,7 @@ export default function AdjustmentClient({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-neutral-200 bg-neutral-50 text-neutral-600">
+                  <th className="w-10 px-2 py-2.5 text-center font-semibold">지급</th>
                   <SortTh label="이름" k="name" sort={sort} onSort={toggle} align="left" />
                   <SortTh label="분배율" k="shareRatio" sort={sort} onSort={toggle} />
                   <SortTh label="분배금" k="share" sort={sort} onSort={toggle} />
@@ -185,6 +217,7 @@ export default function AdjustmentClient({
               </thead>
               <tbody>
                 <tr className="border-b border-neutral-100 bg-red-50/40">
+                  <td className="px-2 py-2" />
                   <td className="px-3 py-2 font-medium text-red-500">제외금액</td>
                   <td className="px-3 py-2 text-right text-neutral-400">
                     {data?.week.excludeRatio ?? 0}%
@@ -195,19 +228,43 @@ export default function AdjustmentClient({
                 </tr>
                 {loading && (
                   <tr>
-                    <td colSpan={3} className="py-8 text-center text-neutral-400">
+                    <td colSpan={4} className="py-8 text-center text-neutral-400">
                       불러오는 중...
                     </td>
                   </tr>
                 )}
                 {!loading &&
-                  sorted.map((r) => (
+                  sorted.map((r) => {
+                    const paid = paidSet.has(r.memberId);
+                    return (
                     <tr
                       key={r.memberId}
-                      className={`border-b border-neutral-50 ${r.excluded ? "text-neutral-300" : ""}`}
+                      className={`border-b border-neutral-50 ${
+                        paid
+                          ? "bg-emerald-50"
+                          : r.excluded
+                            ? "text-neutral-300"
+                            : "hover:bg-neutral-50"
+                      }`}
                     >
-                      <td className="px-3 py-2 font-medium">
+                      <td className="px-2 py-2 text-center">
+                        <input
+                          type="checkbox"
+                          checked={paid}
+                          onChange={() => togglePaid(r.memberId)}
+                          className="h-4 w-4 cursor-pointer accent-emerald-600"
+                          title="분배금 지급 완료 표시"
+                        />
+                      </td>
+                      <td
+                        onClick={() => togglePaid(r.memberId)}
+                        className={`cursor-pointer select-none px-3 py-2 font-medium ${
+                          paid ? "text-emerald-700" : ""
+                        }`}
+                        title="클릭하면 지급 완료로 표시됩니다"
+                      >
                         {r.name}
+                        {paid && <span className="ml-1 text-xs text-emerald-600">✔ 지급</span>}
                         {r.excluded && <span className="ml-1 text-xs">(제외)</span>}
                       </td>
                       <td className="px-3 py-2 text-right text-neutral-500">
@@ -217,7 +274,8 @@ export default function AdjustmentClient({
                         {r.share.toLocaleString()}
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
               </tbody>
             </table>
           </div>

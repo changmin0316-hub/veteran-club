@@ -21,6 +21,7 @@ export interface SettlementRow {
   extra: number;
   share: number;
   excluded: boolean;
+  paid: boolean;
   counts: Record<number, number>;
 }
 
