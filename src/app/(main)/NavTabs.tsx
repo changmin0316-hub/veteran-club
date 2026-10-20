@@ -11,9 +11,9 @@ const TABS = [
   { href: "/attendance", label: "출석 현황", managerOnly: false },
   { href: "/closing", label: "주차(시즌) 결산", managerOnly: true },
   { href: "/adjustment", label: "분배금 정산", managerOnly: true },
-  { href: "/awards", label: "낙찰 통계", managerOnly: true },
+  { href: "/awards", label: "낙찰 통계", managerOnly: false },
   { href: "/users", label: "길드원", managerOnly: false },
-  { href: "/matching", label: "매칭표(준비중)", managerOnly: true },
+  { href: "/matching", label: "매칭표(준비중)", managerOnly: false },
 ];
 
 export default function NavTabs({ isManager }: { isManager: boolean }) {

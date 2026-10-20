@@ -66,6 +66,7 @@ export default function AwardsClient({
   donations,
   payouts,
   members,
+  isManager = false,
 }: {
   awards: Award[];
   guilds: GuildOpt[];
@@ -73,6 +74,7 @@ export default function AwardsClient({
   donations: DonationRow[];
   payouts: PayoutRow[];
   members: MemberOpt[];
+  isManager?: boolean;
 }) {
   const router = useRouter();
   const [view, setView] = useState<"items" | "pay" | "gift">("items");
@@ -524,6 +526,7 @@ export default function AwardsClient({
       {view === "gift" && (
         <div className="grid gap-4">
           {/* 기부 입력 폼 */}
+          {isManager && (
           <div className="rounded-lg border border-sky-200 bg-sky-50/40 p-4">
             <p className="mb-2 text-sm font-semibold text-sky-700">기부 등록</p>
             <div className="flex flex-wrap items-end gap-2">
@@ -584,6 +587,7 @@ export default function AwardsClient({
               같은 아이템은 아이템명을 동일하게 입력하면 자동으로 묶여서 집계됩니다.
             </p>
           </div>
+          )}
 
           {/* 아이템별 기부 내역 */}
           {donateByItem.length === 0 ? (
@@ -618,6 +622,7 @@ export default function AwardsClient({
                         )}
                         <span className="font-medium">{r.memberName}</span>
                         <span className="tabular-nums">{r.quantity.toLocaleString()}개</span>
+                        {isManager && (
                         <button
                           onClick={() => removeDonation(r.id)}
                           className="text-neutral-400 hover:text-red-500"
@@ -625,6 +630,7 @@ export default function AwardsClient({
                         >
                           ×
                         </button>
+                        )}
                       </span>
                     ))}
                   </div>
@@ -634,6 +640,7 @@ export default function AwardsClient({
           )}
 
           {/* 지급 입력 폼 */}
+          {isManager && (
           <div className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-4">
             <p className="mb-2 text-sm font-semibold text-emerald-700">지급 등록</p>
             <div className="flex flex-wrap items-end gap-2">
@@ -685,6 +692,7 @@ export default function AwardsClient({
               기부받은 아이템을 길드원에게 지급(분배)한 내역입니다. 같은 아이템명은 자동으로 묶여서 집계됩니다.
             </p>
           </div>
+          )}
 
           {/* 아이템별 지급 내역 */}
           {payoutByItem.length === 0 ? (
@@ -712,6 +720,7 @@ export default function AwardsClient({
                       >
                         <span className="font-medium">{r.memberName}</span>
                         <span className="tabular-nums">{r.quantity.toLocaleString()}개</span>
+                        {isManager && (
                         <button
                           onClick={() => removePayout(r.id)}
                           className="text-neutral-400 hover:text-red-500"
@@ -719,6 +728,7 @@ export default function AwardsClient({
                         >
                           ×
                         </button>
+                        )}
                       </span>
                     ))}
                   </div>

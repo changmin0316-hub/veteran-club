@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireManager, AuthError } from "@/lib/guard";
+import { requireUser, AuthError } from "@/lib/guard";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +9,7 @@ const SIDE_TO_REL: Record<string, string> = { 아군: "A", 중립: "N", 적군: 
 
 export async function GET() {
   try {
-    await requireManager();
+    await requireUser();
   } catch (e) {
     if (e instanceof AuthError)
       return NextResponse.json({ message: e.message }, { status: e.status });

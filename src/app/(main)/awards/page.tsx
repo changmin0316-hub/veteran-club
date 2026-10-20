@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireManagerPage } from "@/lib/page-guard";
+import { requireUserPage } from "@/lib/page-guard";
 import { computeSettlement } from "@/lib/settlement";
 import AwardsClient, {
   type Award,
@@ -13,7 +13,8 @@ import AwardsClient, {
 export const dynamic = "force-dynamic";
 
 export default async function AwardsPage() {
-  await requireManagerPage();
+  const me = await requireUserPage();
+  const isManager = me.role === "ADMIN" || me.role === "COMMANDER";
 
   const [awarded, guilds, weeks, donations, payouts, members] = await Promise.all([
     prisma.eventItem.findMany({
@@ -130,6 +131,7 @@ export default async function AwardsPage() {
       donations={donationRows}
       payouts={payoutRows}
       members={memberOpts}
+      isManager={isManager}
     />
   );
 }
