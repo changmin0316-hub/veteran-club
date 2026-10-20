@@ -61,8 +61,8 @@ const ROLE_LABEL: Record<RoleValue, string> = {
 const ROLE_RANK: Record<RoleValue, number> = { ADMIN: 2, COMMANDER: 1, MEMBER: 0 };
 // 캐릭명 색상 (직책 구분)
 const ROLE_NAME_CLS: Record<RoleValue, string> = {
-  ADMIN: "text-amber-600 font-bold",
-  COMMANDER: "text-sky-600 font-semibold",
+  ADMIN: "text-amber-500 font-bold",
+  COMMANDER: "text-emerald-500 font-bold",
   MEMBER: "",
 };
 // 직업 축약
