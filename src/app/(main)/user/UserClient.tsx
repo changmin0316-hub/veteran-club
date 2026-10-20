@@ -69,7 +69,7 @@ export default function UserClient({
     setImgBusy(kind);
     setErr(null);
     try {
-      const dataUrl = await resizeToDataUrl(file, 1000, 0.72);
+      const dataUrl = await resizeToDataUrl(file, 1600, 0.78);
       set(kind, dataUrl);
     } catch {
       setErr("이미지를 불러오지 못했습니다. 다른 이미지를 시도하세요.");
@@ -461,7 +461,7 @@ function ImageSlot({
           <img
             src={value}
             alt={label}
-            className="max-h-56 w-full rounded border border-neutral-100 object-contain"
+            className="max-h-[32rem] w-full rounded border border-neutral-100 object-contain"
           />
           <div className="mt-2 flex gap-2">
             <label className="flex-1 cursor-pointer rounded border border-neutral-300 bg-neutral-50 px-3 py-1.5 text-center text-xs text-neutral-700 hover:bg-neutral-100">
@@ -489,7 +489,7 @@ function ImageSlot({
           </div>
         </div>
       ) : (
-        <label className="flex h-40 cursor-pointer flex-col items-center justify-center rounded border-2 border-dashed border-neutral-300 text-sm text-neutral-400 hover:border-sky-300 hover:text-sky-500">
+        <label className="flex h-64 cursor-pointer flex-col items-center justify-center rounded border-2 border-dashed border-neutral-300 text-sm text-neutral-400 hover:border-sky-300 hover:text-sky-500">
           {busy ? "처리 중..." : "+ 이미지 선택"}
           <span className="mt-1 text-xs text-neutral-300">클릭하여 첨부</span>
           <input
