@@ -17,8 +17,21 @@ const SIDES: Side[] = ["아군", "적군", "중립"];
 const SERVERS = ["럭스", "녹스", "비타", "마레", "솔라"];
 const FACTIONS = ["피데스", "모르스", "살루스", "호노르", "메투스", "돌로르"];
 
-export default function MatchingClient({ initial }: { initial: MatchGuildRow[] }) {
+export default function MatchingClient({
+  initial,
+  canApply = false,
+}: {
+  initial: MatchGuildRow[];
+  canApply?: boolean;
+}) {
   const router = useRouter();
+
+  // 등록된 길드 데이터로 위 매칭 보드를 갱신 (보드 iframe 새로고침)
+  function applyToBoard() {
+    const el = document.getElementById("matchBoard") as HTMLIFrameElement | null;
+    if (el) el.src = el.src;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
   const [server, setServer] = useState(SERVERS[0]);
   const [faction, setFaction] = useState(FACTIONS[0]);
   const [name, setName] = useState("");
@@ -142,6 +155,19 @@ export default function MatchingClient({ initial }: { initial: MatchGuildRow[] }
           </button>
         </div>
         {err && <p className="mt-2 text-xs text-red-500">{err}</p>}
+        {canApply && (
+          <div className="mt-3 flex items-center gap-2 border-t border-neutral-100 pt-3">
+            <button
+              onClick={applyToBoard}
+              className="rounded-lg bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+            >
+              전체 매칭 수정
+            </button>
+            <span className="text-xs text-neutral-400">
+              아래 등록한 길드 데이터로 위 매칭 보드를 갱신합니다. (관리자 전용)
+            </span>
+          </div>
+        )}
       </div>
 
       {/* 서버별 길드 리스트 */}

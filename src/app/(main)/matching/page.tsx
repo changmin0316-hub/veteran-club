@@ -1,11 +1,13 @@
 import { prisma } from "@/lib/db";
 import { requireManagerPage } from "@/lib/page-guard";
+import { getCurrentUser } from "@/lib/session";
 import MatchingClient, { type MatchGuildRow } from "./MatchingClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function MatchingPage() {
   await requireManagerPage();
+  const me = await getCurrentUser();
 
   const guilds = await prisma.matchGuild.findMany({
     orderBy: [{ server: "asc" }, { grade: "desc" }, { name: "asc" }],
@@ -28,6 +30,7 @@ export default async function MatchingPage() {
         </div>
         <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
           <iframe
+            id="matchBoard"
             src="/matching-board.html"
             title="어비스 2~5층 매칭 보드"
             className="h-[80vh] w-full border-0"
@@ -38,7 +41,7 @@ export default async function MatchingPage() {
       {/* 서버/길드 수기 등록·관리 */}
       <div>
         <h2 className="mb-2 text-sm font-bold text-neutral-700">서버별 길드 등록 · 관리</h2>
-        <MatchingClient initial={rows} />
+        <MatchingClient initial={rows} canApply={me?.role === "ADMIN"} />
       </div>
     </section>
   );
