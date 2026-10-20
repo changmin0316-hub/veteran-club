@@ -450,7 +450,7 @@ export default function UsersClient({
           <thead>
             <tr className="border-b border-neutral-200 bg-neutral-50 text-neutral-600">
               {isManager && (
-                <th className="sticky left-0 z-20 w-10 bg-neutral-50 px-3 py-2.5">
+                <th className="sticky left-0 z-20 w-10 px-3 py-2.5">
                   <input
                     type="checkbox"
                     checked={
@@ -461,7 +461,7 @@ export default function UsersClient({
                 </th>
               )}
               <th
-                className={`sticky z-20 bg-neutral-50 px-3 py-2.5 text-left font-semibold ${isManager ? "left-10" : "left-0"}`}
+                className={`sticky z-20 px-3 py-2.5 text-left font-semibold ${isManager ? "left-10" : "left-0"}`}
               >
                 <button
                   onClick={() => toggleSort("name")}
