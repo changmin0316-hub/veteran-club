@@ -190,19 +190,22 @@ export default function UsersClient({
 
   // 요약 집계
   const summary = useMemo(() => {
+    // 선택한 군(전체/1군/2군/…)에 맞춰 집계
+    const scoped =
+      activeGuild === "all" ? rows : rows.filter((r) => r.guildId === activeGuild);
     const byRole = { ADMIN: 0, COMMANDER: 0, MEMBER: 0 } as Record<RoleValue, number>;
     let totalSum = 0;
-    for (const r of rows) {
+    for (const r of scoped) {
       byRole[r.role] = (byRole[r.role] ?? 0) + 1;
       totalSum += r.attack + r.defense + r.accuracy;
     }
     return {
-      count: rows.length,
+      count: scoped.length,
       byRole,
       totalSum,
-      avgTotal: rows.length ? Math.round(totalSum / rows.length) : 0,
+      avgTotal: scoped.length ? Math.round(totalSum / scoped.length) : 0,
     };
-  }, [rows]);
+  }, [rows, activeGuild]);
 
   // 직업별 인원 통계 (인원 많은 순)
   const jobStats = useMemo(() => {
