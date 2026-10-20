@@ -13,6 +13,7 @@ export default async function MatchingPage() {
   const rows: MatchGuildRow[] = guilds.map((g) => ({
     id: g.id,
     server: g.server,
+    faction: g.faction,
     name: g.name,
     side: g.side as MatchGuildRow["side"],
     grade: g.grade,

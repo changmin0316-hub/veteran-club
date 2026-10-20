@@ -139,7 +139,8 @@ model SettlementExclusion {
 /// 매칭표용 서버/길드 정보 (운영진 수기 입력)
 model MatchGuild {
   id        Int      @id @default(autoincrement())
-  server    String // 서버명 (예: 럭스-피데스)
+  server    String // 서버 (럭스/녹스/비타/마레/솔라)
+  faction   String   @default("") // 세력 (피데스/모르스/살루스/호노르/메투스/돌로르)
   name      String // 길드 이름
   side      String   @default("중립") // 아군 | 적군 | 중립
   grade     Int      @default(1) // 등급 별 개수 1~3

@@ -7,26 +7,26 @@ export type Side = "아군" | "적군" | "중립";
 export interface MatchGuildRow {
   id: number;
   server: string;
+  faction: string;
   name: string;
   side: Side;
   grade: number;
 }
 
 const SIDES: Side[] = ["아군", "적군", "중립"];
+const SERVERS = ["럭스", "녹스", "비타", "마레", "솔라"];
+const FACTIONS = ["피데스", "모르스", "살루스", "호노르", "메투스", "돌로르"];
 
 export default function MatchingClient({ initial }: { initial: MatchGuildRow[] }) {
   const router = useRouter();
-  const [server, setServer] = useState("");
+  const [server, setServer] = useState(SERVERS[0]);
+  const [faction, setFaction] = useState(FACTIONS[0]);
   const [name, setName] = useState("");
   const [side, setSide] = useState<Side>("적군");
   const [grade, setGrade] = useState(1);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
-  const servers = useMemo(
-    () => Array.from(new Set(initial.map((g) => g.server))).sort(),
-    [initial]
-  );
   const byServer = useMemo(() => {
     const m = new Map<string, MatchGuildRow[]>();
     for (const g of initial) {
@@ -38,14 +38,14 @@ export default function MatchingClient({ initial }: { initial: MatchGuildRow[] }
 
   async function add() {
     setErr("");
-    if (!server.trim()) return setErr("서버명을 입력하세요.");
+    if (!server) return setErr("서버를 선택하세요.");
     if (!name.trim()) return setErr("길드 이름을 입력하세요.");
     setBusy(true);
     try {
       const res = await fetch("/api/matching", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ server: server.trim(), name: name.trim(), side, grade }),
+        body: JSON.stringify({ server, faction, name: name.trim(), side, grade }),
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -82,20 +82,25 @@ export default function MatchingClient({ initial }: { initial: MatchGuildRow[] }
       <div className="mb-4 rounded-lg border border-neutral-200 bg-white p-4">
         <p className="mb-2 text-sm font-semibold text-neutral-700">길드 등록</p>
         <div className="flex flex-wrap items-end gap-2">
-          <div className="min-w-[150px] flex-1">
-            <label className="mb-1 block text-xs text-neutral-500">서버명</label>
-            <input
-              list="match-servers"
-              value={server}
-              onChange={(e) => setServer(e.target.value)}
-              placeholder="예) 럭스-피데스"
-              className={input}
-            />
-            <datalist id="match-servers">
-              {servers.map((s) => (
-                <option key={s} value={s} />
+          <div className="w-28">
+            <label className="mb-1 block text-xs text-neutral-500">서버</label>
+            <select value={server} onChange={(e) => setServer(e.target.value)} className={input}>
+              {SERVERS.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
               ))}
-            </datalist>
+            </select>
+          </div>
+          <div className="w-28">
+            <label className="mb-1 block text-xs text-neutral-500">세력</label>
+            <select value={faction} onChange={(e) => setFaction(e.target.value)} className={input}>
+              {FACTIONS.map((f) => (
+                <option key={f} value={f}>
+                  {f}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="min-w-[150px] flex-1">
             <label className="mb-1 block text-xs text-neutral-500">길드 이름</label>
@@ -167,6 +172,9 @@ export default function MatchingClient({ initial }: { initial: MatchGuildRow[] }
                     className={`inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium ring-1 ${sideCls(g.side)}`}
                   >
                     <span className="rounded bg-black/10 px-1 text-[10px]">{g.side}</span>
+                    {g.faction && (
+                      <span className="rounded bg-black/10 px-1 text-[10px]">{g.faction}</span>
+                    )}
                     <span>{g.name}</span>
                     <span className="text-amber-500">{"★".repeat(g.grade)}</span>
                     <button

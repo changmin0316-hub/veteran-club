@@ -24,7 +24,8 @@ export async function GET() {
 }
 
 const createSchema = z.object({
-  server: z.string().trim().min(1, "서버명을 입력하세요.").max(50),
+  server: z.string().trim().min(1, "서버를 선택하세요.").max(50),
+  faction: z.string().trim().max(50).default(""),
   name: z.string().trim().min(1, "길드 이름을 입력하세요.").max(50),
   side: z.enum(["아군", "적군", "중립"]).default("중립"),
   grade: z.number().int().min(1).max(3).default(1),
