@@ -97,6 +97,8 @@ const inputStyle: React.CSSProperties = {
   border: "none",
   outline: "none",
   background: "#fff",
+  color: "#111",
+  fontWeight: 600,
   fontSize: "15px",
 };
 
