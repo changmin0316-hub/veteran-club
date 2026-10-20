@@ -40,7 +40,14 @@ export interface StatDelta {
   total: number;
   itemCollection: number;
 }
-export type StatDeltaMap = Record<number, StatDelta | null>;
+// 전월 말일 기준선 (멤버별). 현재 입력값과 비교해 증감을 계산.
+export interface BaselineStat {
+  attack: number;
+  defense: number;
+  accuracy: number;
+  itemCollection: number;
+}
+export type BaselineMap = Record<number, BaselineStat | undefined>;
 
 const ROLE_LABEL: Record<RoleValue, string> = {
   ADMIN: "관리자",
@@ -68,17 +75,31 @@ export default function UsersClient({
   initialRows,
   guilds,
   bosses,
-  deltas,
+  baseline,
   myRole,
 }: {
   initialRows: MemberRow[];
   guilds: GuildOpt[];
   bosses: BossOpt[];
-  deltas: StatDeltaMap;
+  baseline: BaselineMap;
   myRole: RoleValue;
 }) {
   const isAdmin = myRole === "ADMIN";
   const isManager = myRole === "ADMIN" || myRole === "COMMANDER";
+
+  // 현재 입력값(행) vs 전월 말일 기준선 → 실시간 증감 계산
+  function rowDelta(r: MemberRow): StatDelta | null {
+    const b = baseline[r.id];
+    if (!b) return null;
+    return {
+      attack: r.attack - b.attack,
+      defense: r.defense - b.defense,
+      accuracy: r.accuracy - b.accuracy,
+      total:
+        r.attack + r.defense + r.accuracy - (b.attack + b.defense + b.accuracy),
+      itemCollection: r.itemCollection - b.itemCollection,
+    };
+  }
 
   const [rows, setRows] = useState<MemberRow[]>(initialRows);
   const [original, setOriginal] = useState<Map<number, MemberRow>>(
@@ -487,6 +508,7 @@ export default function UsersClient({
             {visible.map((r) => {
               const editable = canEditRow(r);
               const g = guilds.find((x) => x.id === r.guildId);
+              const d = rowDelta(r);
               return (
                 <tr key={r.id} className="border-b border-neutral-50 hover:bg-neutral-50">
                   {isManager && (
@@ -597,19 +619,19 @@ export default function UsersClient({
                       />
                       <NumCell
                         value={r.attack}
-                        delta={deltas[r.id]?.attack}
+                        delta={d?.attack}
                         disabled={!editable}
                         onChange={(v) => patch(r.id, { attack: v })}
                       />
                       <NumCell
                         value={r.defense}
-                        delta={deltas[r.id]?.defense}
+                        delta={d?.defense}
                         disabled={!editable}
                         onChange={(v) => patch(r.id, { defense: v })}
                       />
                       <NumCell
                         value={r.accuracy}
-                        delta={deltas[r.id]?.accuracy}
+                        delta={d?.accuracy}
                         disabled={!editable}
                         onChange={(v) => patch(r.id, { accuracy: v })}
                       />
@@ -617,11 +639,11 @@ export default function UsersClient({
                         <div>
                           {(r.attack + r.defense + r.accuracy).toLocaleString()}
                         </div>
-                        <DeltaBadge value={deltas[r.id]?.total} />
+                        <DeltaBadge value={d?.total} />
                       </td>
                       <td className="px-1.5 py-1.5 text-right tabular-nums text-neutral-700">
                         <div>{r.itemCollection.toFixed(2)}%</div>
-                        <DeltaBadge value={deltas[r.id]?.itemCollection} pct />
+                        <DeltaBadge value={d?.itemCollection} pct />
                       </td>
                       <td className="px-1.5 py-1.5">
                         <select

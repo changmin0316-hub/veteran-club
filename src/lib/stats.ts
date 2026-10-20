@@ -90,35 +90,57 @@ export async function recordMonthlySnapshot(force = false): Promise<number> {
 }
 
 /**
- * 전월 대비 증감: 이번 달 스냅샷 − 전월 스냅샷.
- * 전월 스냅샷이 없는 멤버는 null(비교 불가).
+ * 전월 말일 기준선(= 이번 달 스냅샷)을 멤버별로 반환.
+ * 이번 달 1일(크론) 또는 그 달 첫 조회 시점에 캡처된 "전월 말일까지 저장된" 값.
+ */
+export async function getStatBaseline(): Promise<
+  Map<number, { attack: number; defense: number; accuracy: number; itemCollection: number }>
+> {
+  const ym = ymOf();
+  const base = await prisma.monthlyStat.findMany({ where: { ym } });
+  return new Map(
+    base.map((s) => [
+      s.memberId,
+      {
+        attack: s.attack,
+        defense: s.defense,
+        accuracy: s.accuracy,
+        itemCollection: s.itemCollection,
+      },
+    ])
+  );
+}
+
+/**
+ * 증감: 현재 저장된 실시간 스탯 − 전월 말일 기준선(이번 달 스냅샷).
+ * 기준선이 없는 멤버는 null(비교 불가). 길드원이 값을 수정·저장하면 즉시 반영된다.
  */
 export async function getStatDeltas(): Promise<Map<number, StatDelta | null>> {
   const ym = ymOf();
-  const prev = prevYm(ym);
 
-  const [cur, old] = await Promise.all([
+  const [base, members] = await Promise.all([
     prisma.monthlyStat.findMany({ where: { ym } }),
-    prisma.monthlyStat.findMany({ where: { ym: prev } }),
+    prisma.member.findMany({
+      select: { id: true, attack: true, defense: true, accuracy: true, itemCollection: true },
+    }),
   ]);
 
-  const curMap = new Map(cur.map((s) => [s.memberId, s]));
-  const oldMap = new Map(old.map((s) => [s.memberId, s]));
+  const baseMap = new Map(base.map((s) => [s.memberId, s]));
 
   const result = new Map<number, StatDelta | null>();
-  for (const [memberId, c] of curMap) {
-    const o = oldMap.get(memberId);
-    if (!o) {
-      result.set(memberId, null);
+  for (const m of members) {
+    const b = baseMap.get(m.id);
+    if (!b) {
+      result.set(m.id, null);
       continue;
     }
-    result.set(memberId, {
-      attack: c.attack - o.attack,
-      defense: c.defense - o.defense,
-      accuracy: c.accuracy - o.accuracy,
+    result.set(m.id, {
+      attack: m.attack - b.attack,
+      defense: m.defense - b.defense,
+      accuracy: m.accuracy - b.accuracy,
       total:
-        c.attack + c.defense + c.accuracy - (o.attack + o.defense + o.accuracy),
-      itemCollection: c.itemCollection - o.itemCollection,
+        m.attack + m.defense + m.accuracy - (b.attack + b.defense + b.accuracy),
+      itemCollection: m.itemCollection - b.itemCollection,
     });
   }
   return result;
