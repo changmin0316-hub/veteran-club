@@ -17,6 +17,7 @@ const updateSchema = z.object({
   bossKills: z.record(z.string(), z.boolean()).optional(),
   myth1: z.string().trim().max(20).optional(),
   myth2: z.string().trim().max(20).optional(),
+  myth3: z.string().trim().max(20).optional(),
   skill1: z.boolean().optional(),
   skill2: z.boolean().optional(),
   pvpKills: z.number().int().min(0).optional(),

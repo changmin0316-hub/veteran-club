@@ -16,6 +16,7 @@ export interface MemberRow {
   accuracy: number;
   myth1: string;
   myth2: string;
+  myth3: string;
   skill1: boolean;
   skill2: boolean;
   pvpKills: number;
@@ -230,6 +231,7 @@ export default function UsersClient({
         o.accuracy !== r.accuracy ||
         o.myth1 !== r.myth1 ||
         o.myth2 !== r.myth2 ||
+        o.myth3 !== r.myth3 ||
         o.skill1 !== r.skill1 ||
         o.skill2 !== r.skill2 ||
         o.pvpKills !== r.pvpKills ||
@@ -297,6 +299,7 @@ export default function UsersClient({
             accuracy: r.accuracy,
             myth1: r.myth1,
             myth2: r.myth2,
+            myth3: r.myth3,
             skill1: r.skill1,
             skill2: r.skill2,
             pvpKills: r.pvpKills,
@@ -576,6 +579,9 @@ export default function UsersClient({
                   <th className="px-1 py-2.5 text-right text-[11px] font-semibold leading-tight text-neutral-500">
                     신화<br />사역마
                   </th>
+                  <th className="px-1 py-2.5 text-right text-[11px] font-semibold leading-tight text-neutral-500">
+                    신화<br />공명
+                  </th>
                   <th className="px-1 py-2.5 text-center text-[11px] font-semibold leading-tight text-neutral-500">
                     스킬<br />1전스
                   </th>
@@ -719,6 +725,12 @@ export default function UsersClient({
                         disabled={!editable}
                         onChange={(v) => patch(r.id, { myth2: v })}
                       />
+                      <TextCell
+                        value={r.myth3}
+                        width="w-12"
+                        disabled={!editable}
+                        onChange={(v) => patch(r.id, { myth3: v })}
+                      />
                       <OXCell
                         on={r.skill1}
                         disabled={!editable}
@@ -798,7 +810,7 @@ export default function UsersClient({
             {visible.length === 0 && (
               <tr>
                 <td
-                  colSpan={3 + bosses.length + (isManager ? 13 : 0)}
+                  colSpan={3 + bosses.length + (isManager ? 14 : 0)}
                   className="py-8 text-center text-neutral-400"
                 >
                   해당 군에 길드원이 없습니다.
@@ -891,6 +903,7 @@ function AddMemberModal({
         accuracy: m.accuracy,
         myth1: m.myth1 ?? "0(0)",
         myth2: m.myth2 ?? "0(0)",
+        myth3: m.myth3 ?? "0(0)",
         skill1: m.skill1 ?? false,
         skill2: m.skill2 ?? false,
         pvpKills: m.pvpKills ?? 0,

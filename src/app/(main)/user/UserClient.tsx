@@ -22,6 +22,7 @@ interface Profile {
   legendSkill: boolean;
   myth1: string;
   myth2: string;
+  myth3: string;
   skill1: boolean;
   skill2: boolean;
   pvpKills: number;
@@ -114,6 +115,7 @@ export default function UserClient({
         accuracy: form.accuracy,
         myth1: form.myth1,
         myth2: form.myth2,
+        myth3: form.myth3,
         skill1: form.skill1,
         skill2: form.skill2,
         pvpKills: form.pvpKills,
@@ -277,6 +279,15 @@ export default function UserClient({
               onFocus={(e) => e.target.select()}
               onChange={(e) => set("myth2", e.target.value)}
               placeholder="예: 3(3)"
+              className={input}
+            />
+          </Field>
+          <Field label="신화공명(각성)">
+            <input
+              value={form.myth3}
+              onFocus={(e) => e.target.select()}
+              onChange={(e) => set("myth3", e.target.value)}
+              placeholder="예: 2(2)"
               className={input}
             />
           </Field>

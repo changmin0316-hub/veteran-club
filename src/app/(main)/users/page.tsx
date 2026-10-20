@@ -49,6 +49,7 @@ export default async function UsersPage() {
     accuracy: m.accuracy,
     myth1: m.myth1,
     myth2: m.myth2,
+    myth3: m.myth3,
     skill1: m.skill1,
     skill2: m.skill2,
     pvpKills: m.pvpKills,

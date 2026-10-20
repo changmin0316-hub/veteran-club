@@ -33,6 +33,7 @@ export async function GET() {
       legendSkill: true,
       myth1: true,
       myth2: true,
+      myth3: true,
       skill1: true,
       skill2: true,
       pvpKills: true,
@@ -54,6 +55,7 @@ const schema = z.object({
   legendSkill: z.boolean().optional(),
   myth1: z.string().trim().max(20).optional(),
   myth2: z.string().trim().max(20).optional(),
+  myth3: z.string().trim().max(20).optional(),
   skill1: z.boolean().optional(),
   skill2: z.boolean().optional(),
   pvpKills: z.number().int().min(0).optional(),
@@ -98,6 +100,7 @@ export async function PATCH(req: NextRequest) {
   if (d.legendSkill !== undefined) data.legendSkill = d.legendSkill;
   if (d.myth1 !== undefined) data.myth1 = d.myth1;
   if (d.myth2 !== undefined) data.myth2 = d.myth2;
+  if (d.myth3 !== undefined) data.myth3 = d.myth3;
   if (d.skill1 !== undefined) data.skill1 = d.skill1;
   if (d.skill2 !== undefined) data.skill2 = d.skill2;
   if (d.pvpKills !== undefined) data.pvpKills = d.pvpKills;
