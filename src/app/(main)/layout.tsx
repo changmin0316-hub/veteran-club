@@ -15,7 +15,7 @@ export default async function MainLayout({
   const isManager = user.role === "ADMIN" || user.role === "COMMANDER";
 
   return (
-    <div className="mx-auto max-w-6xl px-4">
+    <div className="mx-auto max-w-[88rem] px-4">
       {/* 상단 메뉴바 고정 (스크롤해도 항상 보이도록) */}
       <StickyHeader>
         <TopBar name={user.name} role={user.role} />

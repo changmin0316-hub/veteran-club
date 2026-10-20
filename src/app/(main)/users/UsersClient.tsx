@@ -576,13 +576,13 @@ export default function UsersClient({
               ))}
               {isManager && (
                 <>
-                  <th className="px-1 py-2.5 text-right text-[11px] font-semibold leading-tight text-neutral-500">
+                  <th className="px-0.5 py-2.5 text-right text-[11px] font-semibold leading-tight text-neutral-500">
                     신화<br />성의
                   </th>
-                  <th className="px-1 py-2.5 text-right text-[11px] font-semibold leading-tight text-neutral-500">
+                  <th className="px-0.5 py-2.5 text-right text-[11px] font-semibold leading-tight text-neutral-500">
                     신화<br />사역마
                   </th>
-                  <th className="px-1 py-2.5 text-right text-[11px] font-semibold leading-tight text-neutral-500">
+                  <th className="px-0.5 py-2.5 text-right text-[11px] font-semibold leading-tight text-neutral-500">
                     신화<br />공명
                   </th>
                   <th className="px-1 py-2.5 text-center text-[11px] font-semibold leading-tight text-neutral-500">
@@ -718,19 +718,19 @@ export default function UsersClient({
                     <>
                       <TextCell
                         value={r.myth1}
-                        width="w-12"
+                        width="w-10"
                         disabled={!editable}
                         onChange={(v) => patch(r.id, { myth1: v })}
                       />
                       <TextCell
                         value={r.myth2}
-                        width="w-12"
+                        width="w-10"
                         disabled={!editable}
                         onChange={(v) => patch(r.id, { myth2: v })}
                       />
                       <TextCell
                         value={r.myth3}
-                        width="w-12"
+                        width="w-10"
                         disabled={!editable}
                         onChange={(v) => patch(r.id, { myth3: v })}
                       />
@@ -1093,13 +1093,13 @@ function TextCell({
   onChange: (v: string) => void;
 }) {
   return (
-    <td className="px-1 py-1.5">
+    <td className="px-0.5 py-1.5">
       <input
         value={value}
         disabled={disabled}
         onFocus={(e) => e.target.select()}
         onChange={(e) => onChange(e.target.value)}
-        className={`${width} rounded border border-transparent bg-transparent px-1 py-1 text-right text-sm tabular-nums hover:border-neutral-200 focus:border-sky-400 focus:bg-white focus:outline-none disabled:text-neutral-500`}
+        className={`${width} rounded border border-transparent bg-transparent px-0.5 py-1 text-right text-sm tabular-nums hover:border-neutral-200 focus:border-sky-400 focus:bg-white focus:outline-none disabled:text-neutral-500`}
       />
     </td>
   );
