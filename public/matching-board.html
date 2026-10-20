@@ -330,11 +330,16 @@ const roomF=(fs)=>G.filter(g=>fs.includes(g.f));
 const find2=(g)=>{for(const m of F2)for(let i=0;i<3;i++){const x=m.g[i];if((x[0]===g.sv&&x[1]===g.f)||(x[2]===g.sv&&x[3]===g.f))return {m:m.m,i,grp:x};}};
 const find3=(g)=>F3.findIndex(grp=>grp.some(([sv,fs])=>sv===g.sv&&fs.includes(g.f)));
 
-// 기본 선택 길드: 이름에 '베테랑'이 포함된 길드(없으면 첫 번째)
-const defaultGuildIdx=()=>{const i=G.findIndex(g=>g.n.includes('베테랑'));return i<0?0:i;};
+// 기본 선택 길드: '베테랑클럽' 우선, 없으면 '베테랑' 포함, 그래도 없으면 첫 번째
+const defaultGuildIdx=()=>{
+  let i=G.findIndex(g=>g.n==='베테랑클럽');
+  if(i<0)i=G.findIndex(g=>g.n.includes('베테랑클럽'));
+  if(i<0)i=G.findIndex(g=>g.n.includes('베테랑'));
+  return i<0?0:i;
+};
 let st={tab:'guild',floor:'all',week:CUR,g:defaultGuildIdx()};
-try{const s=JSON.parse(localStorage.getItem('abyssBoard4')||'null');if(s){st=Object.assign(st,s);st.week=CUR;}}catch(e){}
-const save=()=>{try{localStorage.setItem('abyssBoard4',JSON.stringify(st));}catch(e){}};
+try{const s=JSON.parse(localStorage.getItem('abyssBoard5')||'null');if(s){st=Object.assign(st,s);st.week=CUR;}}catch(e){}
+const save=()=>{try{localStorage.setItem('abyssBoard5',JSON.stringify(st));}catch(e){}};
 function segButtons(el,items,cur,onPick,nowV){
   el.innerHTML=items.map(([v,l,t])=>`<button aria-pressed="${String(v)===String(cur)}" class="${String(v)===String(nowV)?'now':''}" data-v="${v}"${t?` title="${t}"`:''}>${l}</button>`).join('');
   el.querySelectorAll('button').forEach(b=>b.onclick=()=>onPick(b.dataset.v));
