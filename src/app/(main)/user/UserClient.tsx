@@ -20,8 +20,8 @@ interface Profile {
   defense: number;
   accuracy: number;
   legendSkill: boolean;
-  myth1: number;
-  myth2: number;
+  myth1: string;
+  myth2: string;
   skill1: boolean;
   skill2: boolean;
   pvpKills: number;
@@ -262,8 +262,24 @@ export default function UserClient({
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-          <NumField label="신화성의" value={form.myth1} onChange={(v) => set("myth1", v)} />
-          <NumField label="신화사역마" value={form.myth2} onChange={(v) => set("myth2", v)} />
+          <Field label="신화성의(각성)">
+            <input
+              value={form.myth1}
+              onFocus={(e) => e.target.select()}
+              onChange={(e) => set("myth1", e.target.value)}
+              placeholder="예: 4(4)"
+              className={input}
+            />
+          </Field>
+          <Field label="신화사역마(각성)">
+            <input
+              value={form.myth2}
+              onFocus={(e) => e.target.select()}
+              onChange={(e) => set("myth2", e.target.value)}
+              placeholder="예: 3(3)"
+              className={input}
+            />
+          </Field>
           <NumField label="쟁탈전 킬수" value={form.pvpKills} onChange={(v) => set("pvpKills", v)} />
           <Field label="템컬렉(%)">
             <input

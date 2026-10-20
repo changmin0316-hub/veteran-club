@@ -14,8 +14,8 @@ export interface MemberRow {
   attack: number;
   defense: number;
   accuracy: number;
-  myth1: number;
-  myth2: number;
+  myth1: string;
+  myth2: string;
   skill1: boolean;
   skill2: boolean;
   pvpKills: number;
@@ -707,15 +707,15 @@ export default function UsersClient({
                   })}
                   {isManager && (
                     <>
-                      <NumCell
+                      <TextCell
                         value={r.myth1}
-                        width="w-9"
+                        width="w-12"
                         disabled={!editable}
                         onChange={(v) => patch(r.id, { myth1: v })}
                       />
-                      <NumCell
+                      <TextCell
                         value={r.myth2}
-                        width="w-9"
+                        width="w-12"
                         disabled={!editable}
                         onChange={(v) => patch(r.id, { myth2: v })}
                       />
@@ -889,8 +889,8 @@ function AddMemberModal({
         attack: m.attack,
         defense: m.defense,
         accuracy: m.accuracy,
-        myth1: m.myth1 ?? 0,
-        myth2: m.myth2 ?? 0,
+        myth1: m.myth1 ?? "0(0)",
+        myth2: m.myth2 ?? "0(0)",
         skill1: m.skill1 ?? false,
         skill2: m.skill2 ?? false,
         pvpKills: m.pvpKills ?? 0,
@@ -1061,6 +1061,31 @@ function GuildTab({
     >
       {children}
     </button>
+  );
+}
+
+// 텍스트 입력 셀 (신화성의/사역마 "4(4)" 등)
+function TextCell({
+  value,
+  disabled,
+  width = "w-14",
+  onChange,
+}: {
+  value: string;
+  disabled: boolean;
+  width?: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <td className="px-1 py-1.5">
+      <input
+        value={value}
+        disabled={disabled}
+        onFocus={(e) => e.target.select()}
+        onChange={(e) => onChange(e.target.value)}
+        className={`${width} rounded border border-transparent bg-transparent px-1 py-1 text-right text-sm tabular-nums hover:border-neutral-200 focus:border-sky-400 focus:bg-white focus:outline-none disabled:text-neutral-500`}
+      />
+    </td>
   );
 }
 
