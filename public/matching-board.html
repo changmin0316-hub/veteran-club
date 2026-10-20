@@ -306,13 +306,14 @@ const PW='10월 14일(수) 점검 후 ~ 11월 11일(수) 점검 전 (4주)';
 const MERGE='한국 리전은 10월 14일 케럼·비타 통합 이후 럭스·녹스·비타·마레·솔라 5개 서버로 운영됩니다.';
 const fmtD=t=>{const d=new Date(t+9*36e5);return `${d.getUTCMonth()+1}월 ${d.getUTCDate()}일(${'일월화수목금토'[d.getUTCDay()]})`;};
 const weekRange=i=>`${fmtD(WSTART+i*WEEK)} 점검 후 ~ ${fmtD(WSTART+(i+1)*WEEK)} 점검 전`;
-let G=GL.map(([sv,f,n,r,mg],id)=>({id,sv,f,n,r,mg:mg||''}));
+let G=GL.map(([sv,f,n,r,mg],id)=>({id,sv,f,n,r,gr:0,mg:mg||''}));
 const MERGED_FROM='케럼', MERGED_TO='비타';
 const svName=g=>g.mg?`${g.mg}(구 ${g.sv})`:g.sv;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const chip=(f,sm)=>`<span class="fc${sm?' sm':''}" style="--c:${FC[f]}">${f}</span>`;
 const svt=s=>`<span class="sv">${s}</span>`;
-const pill=(g,showSv,me)=>`<span class="g r${g.r}${me?' selfg':''}">${me?'<b class="meb">내 길드</b>':''}${esc(g.n)}${showSv?`<small>${svName(g)}</small>`:''}<i>${REL[g.r]}</i></span>`;
+const stars=g=>g.gr?` <span style="color:var(--gold);font-size:10px">${'★'.repeat(g.gr)}</span>`:'';
+const pill=(g,showSv,me)=>`<span class="g r${g.r}${me?' selfg':''}">${me?'<b class="meb">내 길드</b>':''}${esc(g.n)}${stars(g)}${showSv?`<small>${svName(g)}</small>`:''}<i>${REL[g.r]}</i></span>`;
 const unitG=(sv,f)=>G.filter(g=>g.sv===sv&&g.f===f);
 const glist=(l,showSv,selfId)=>`<div class="gl">${l.map(g=>pill(g,showSv,selfId!=null&&g.id===selfId)).join('')}</div>`;
 const hasA=l=>l.some(g=>g.r==='A'), hasE=l=>l.some(g=>g.r==='E');
@@ -514,7 +515,7 @@ buildSelect();if(!G[st.g])st.g=0;if(!WKS.includes(st.week))st.week=CUR;renderAll
     if(!res.ok)return;
     const d=await res.json();
     if(Array.isArray(d.gl)&&d.gl.length){
-      G=d.gl.map(([sv,f,n,r],id)=>({id,sv,f,n,r,mg:''}));
+      G=d.gl.map(([sv,f,n,r,gr],id)=>({id,sv,f,n,r,gr:gr||0,mg:''}));
       st.g=defaultGuildIdx();buildSelect();renderAll();
     }
   }catch(e){}

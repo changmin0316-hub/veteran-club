@@ -20,6 +20,6 @@ export async function GET() {
   });
   const gl = guilds
     .filter((g) => g.faction)
-    .map((g) => [g.server, g.faction, g.name, SIDE_TO_REL[g.side] ?? "N"]);
+    .map((g) => [g.server, g.faction, g.name, SIDE_TO_REL[g.side] ?? "N", g.grade]);
   return NextResponse.json({ gl });
 }
