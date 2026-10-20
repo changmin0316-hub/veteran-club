@@ -34,6 +34,7 @@ export default async function MemberEditPage({
     <UserClient
       targetMemberId={member.id}
       canEditName={me?.role === "ADMIN"}
+      canDelete={me?.role === "ADMIN"}
       profile={{
         name: member.name,
         job: member.job ?? "",

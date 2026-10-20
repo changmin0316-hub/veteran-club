@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { requireManager, AuthError } from "@/lib/guard";
+import { requireManager, requireAdmin, AuthError } from "@/lib/guard";
 
 export const dynamic = "force-dynamic";
 
@@ -121,7 +121,7 @@ export async function DELETE(
 ) {
   let me;
   try {
-    me = await requireManager();
+    me = await requireAdmin();
   } catch (e) {
     if (e instanceof AuthError)
       return NextResponse.json({ message: e.message }, { status: e.status });
@@ -133,12 +133,6 @@ export async function DELETE(
   const target = await prisma.member.findUnique({ where: { id: memberId } });
   if (!target) {
     return NextResponse.json({ message: "길드원을 찾을 수 없습니다." }, { status: 404 });
-  }
-  if (target.role === "ADMIN" && me.role !== "ADMIN") {
-    return NextResponse.json(
-      { message: "관리자 계정은 삭제할 수 없습니다." },
-      { status: 403 }
-    );
   }
   if (target.id === me.memberId) {
     return NextResponse.json(

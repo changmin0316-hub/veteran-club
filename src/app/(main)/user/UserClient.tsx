@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const JOBS = [
   "엘리멘탈리스트",
@@ -37,6 +38,7 @@ export default function UserClient({
   bosses,
   targetMemberId,
   canEditName = false,
+  canDelete = false,
 }: {
   profile: Profile;
   bosses: { id: number; name: string }[];
@@ -44,7 +46,10 @@ export default function UserClient({
   targetMemberId?: number;
   // 관리자만 캐릭터명(로그인 ID) 변경 가능
   canEditName?: boolean;
+  // 관리자만 길드원 삭제 가능
+  canDelete?: boolean;
 }) {
+  const router = useRouter();
   const isManagerEdit = targetMemberId != null;
   const [form, setForm] = useState<Profile>(profile);
   const [newPassword, setNewPassword] = useState("");
@@ -77,6 +82,23 @@ export default function UserClient({
       ...f,
       bossKills: { ...f.bossKills, [id]: !f.bossKills[id] },
     }));
+  }
+
+  async function remove() {
+    if (!isManagerEdit) return;
+    if (!confirm(`${form.name} 길드원을 삭제할까요? 되돌릴 수 없습니다.`)) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await fetch(`/api/members/${targetMemberId}`, { method: "DELETE" });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.message ?? "삭제 실패");
+      router.push("/users");
+      router.refresh();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "삭제 중 오류");
+      setBusy(false);
+    }
   }
 
   async function save() {
@@ -299,7 +321,16 @@ export default function UserClient({
         {msg && <p className="text-sm text-emerald-600">{msg}</p>}
         {err && <p className="text-sm text-red-500">{err}</p>}
 
-        <div className="flex justify-end">
+        <div className="flex items-center justify-end gap-2">
+          {isManagerEdit && canDelete && (
+            <button
+              onClick={remove}
+              disabled={busy}
+              className="mr-auto rounded border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-100 disabled:opacity-50"
+            >
+              길드원 삭제
+            </button>
+          )}
           <button
             onClick={save}
             disabled={busy}

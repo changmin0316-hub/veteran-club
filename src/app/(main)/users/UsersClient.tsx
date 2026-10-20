@@ -684,7 +684,7 @@ export default function UsersClient({
                         </select>
                       </td>
                       <td className="px-3 py-2 text-center">
-                        {editable && (
+                        {isAdmin && editable && (
                           <button
                             onClick={() => remove(r)}
                             disabled={busy}
