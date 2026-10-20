@@ -140,6 +140,8 @@ export default function AdjustmentClient({
 
   const included = data?.rows.filter((r) => !r.excluded) ?? [];
   const totalShare = included.reduce((s, r) => s + r.share, 0);
+  const paidCount = included.filter((r) => paidSet.has(r.memberId)).length;
+  const unpaidCount = included.length - paidCount;
 
   return (
     <section>
@@ -199,6 +201,17 @@ export default function AdjustmentClient({
               />
               <Row label="실 분배 재원" value={data?.distributable ?? 0} strong />
               <Row label="분배 합계" value={totalShare} />
+              <div className="mt-1 flex items-center justify-between border-t border-neutral-100 pt-2">
+                <dt className="text-neutral-500">지급 현황</dt>
+                <dd className="flex items-center gap-1.5 text-xs">
+                  <span className="rounded bg-emerald-100 px-2 py-0.5 font-medium text-emerald-700">
+                    지급 {paidCount}명
+                  </span>
+                  <span className="rounded bg-neutral-100 px-2 py-0.5 font-medium text-neutral-600">
+                    미지급 {unpaidCount}명
+                  </span>
+                </dd>
+              </div>
             </dl>
           </div>
         </div>
