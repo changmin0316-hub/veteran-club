@@ -590,6 +590,12 @@ export default function AwardsClient({
           )}
 
           {/* 아이템별 기부 내역 */}
+          <div className="flex items-center gap-2">
+            <span className="rounded bg-sky-500/15 px-2 py-0.5 text-xs font-bold text-sky-600 ring-1 ring-sky-500/40">
+              📥 기부 내역
+            </span>
+            <span className="text-xs text-neutral-400">길드원 → 길드 (받은 것)</span>
+          </div>
           {donateByItem.length === 0 ? (
             <div className="rounded-lg border border-dashed border-neutral-300 bg-white py-10 text-center text-sm text-neutral-400">
               기부 내역이 없습니다.
@@ -599,9 +605,12 @@ export default function AwardsClient({
               {donateByItem.map((it) => (
                 <div
                   key={it.itemName}
-                  className="rounded-lg border border-neutral-200 bg-white p-4"
+                  className="rounded-lg border border-sky-200 bg-white p-4"
                 >
                   <div className="mb-2 flex items-center gap-2">
+                    <span className="rounded bg-sky-500/15 px-1.5 py-0.5 text-[11px] font-bold text-sky-600 ring-1 ring-sky-500/40">
+                      기부
+                    </span>
                     <span className="font-semibold">{it.itemName}</span>
                     <span className="ml-auto rounded bg-sky-100 px-2.5 py-0.5 text-xs font-medium text-sky-700">
                       총 {it.total.toLocaleString()}개
@@ -695,6 +704,12 @@ export default function AwardsClient({
           )}
 
           {/* 아이템별 지급 내역 */}
+          <div className="mt-2 flex items-center gap-2">
+            <span className="rounded bg-emerald-500/15 px-2 py-0.5 text-xs font-bold text-emerald-600 ring-1 ring-emerald-500/40">
+              📤 지급 내역
+            </span>
+            <span className="text-xs text-neutral-400">길드 → 길드원 (나눠준 것)</span>
+          </div>
           {payoutByItem.length === 0 ? (
             <div className="rounded-lg border border-dashed border-neutral-300 bg-white py-10 text-center text-sm text-neutral-400">
               지급 내역이 없습니다.
@@ -704,9 +719,12 @@ export default function AwardsClient({
               {payoutByItem.map((it) => (
                 <div
                   key={it.itemName}
-                  className="rounded-lg border border-neutral-200 bg-white p-4"
+                  className="rounded-lg border border-emerald-200 bg-white p-4"
                 >
                   <div className="mb-2 flex items-center gap-2">
+                    <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-[11px] font-bold text-emerald-600 ring-1 ring-emerald-500/40">
+                      지급
+                    </span>
                     <span className="font-semibold">{it.itemName}</span>
                     <span className="ml-auto rounded bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
                       총 {it.total.toLocaleString()}개
