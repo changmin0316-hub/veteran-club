@@ -56,6 +56,40 @@ const ROLE_LABEL: Record<RoleValue, string> = {
   COMMANDER: "운영진",
   MEMBER: "길드원",
 };
+// 직책 정렬 순서 (높을수록 위)
+const ROLE_RANK: Record<RoleValue, number> = { ADMIN: 2, COMMANDER: 1, MEMBER: 0 };
+// 캐릭명 색상 (직책 구분)
+const ROLE_NAME_CLS: Record<RoleValue, string> = {
+  ADMIN: "text-amber-600 font-bold",
+  COMMANDER: "text-sky-600 font-semibold",
+  MEMBER: "",
+};
+// 직업 축약
+const JOBS_ALL = [
+  "엘리멘탈리스트",
+  "디바인캐스터",
+  "데스브링어",
+  "건슬링어",
+  "워로드",
+  "뱅가드",
+  "나이트레인저",
+  "디스트로이어",
+  "버서커",
+  "어쌔신",
+];
+const JOB_SHORT: Record<string, string> = {
+  엘리멘탈리스트: "엘리",
+  디바인캐스터: "디바인",
+  데스브링어: "데브",
+  건슬링어: "건슬",
+  워로드: "워로드",
+  뱅가드: "뱅가드",
+  나이트레인저: "나레",
+  디스트로이어: "디트",
+  버서커: "버서",
+  어쌔신: "어쌔",
+};
+const shortJob = (j: string) => JOB_SHORT[j] ?? j;
 
 type SortKey =
   | "name"
@@ -124,15 +158,19 @@ export default function UsersClient({
         (activeGuild === "all" || r.guildId === activeGuild) &&
         (!q || r.name.includes(q) || (r.job ?? "").includes(q))
     );
-    if (!sort) return filtered;
-    const dir = sort.dir === "asc" ? 1 : -1;
+    // 관리자/운영진은 항상 상단 (직책순). 그 안에서 정렬/이름순 적용
+    const dir = sort ? (sort.dir === "asc" ? 1 : -1) : 1;
     const val = (r: MemberRow) =>
-      sort.key === "name"
+      !sort
         ? r.name
-        : sort.key === "total"
-          ? r.attack + r.defense + r.accuracy
-          : r[sort.key];
+        : sort.key === "name"
+          ? r.name
+          : sort.key === "total"
+            ? r.attack + r.defense + r.accuracy
+            : r[sort.key];
     return [...filtered].sort((a, b) => {
+      const rr = ROLE_RANK[b.role] - ROLE_RANK[a.role];
+      if (rr !== 0) return rr;
       const va = val(a);
       const vb = val(b);
       if (typeof va === "string" && typeof vb === "string")
@@ -331,6 +369,42 @@ export default function UsersClient({
     }
   }
 
+  async function removeSelected() {
+    const ids = [...selected].filter((id) => {
+      const r = rows.find((x) => x.id === id);
+      return r && (isAdmin || r.role !== "ADMIN");
+    });
+    if (ids.length === 0) {
+      flash("삭제할 길드원을 체크하세요.");
+      return;
+    }
+    const names = ids
+      .map((id) => rows.find((r) => r.id === id)?.name)
+      .filter(Boolean)
+      .join(", ");
+    if (!confirm(`선택한 ${ids.length}명(${names})을 삭제할까요? 되돌릴 수 없습니다.`)) return;
+    setBusy(true);
+    try {
+      let ok = 0;
+      for (const id of ids) {
+        const res = await fetch(`/api/members/${id}`, { method: "DELETE" });
+        if (res.ok) ok++;
+      }
+      setRows((rs) => rs.filter((r) => !ids.includes(r.id)));
+      setOriginal((m) => {
+        const next = new Map(m);
+        ids.forEach((id) => next.delete(id));
+        return next;
+      });
+      setSelected(new Set());
+      flash(`${ok}명 삭제 완료`);
+    } catch (e) {
+      flash(e instanceof Error ? e.message : "삭제 중 오류");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function flash(m: string) {
     setMsg(m);
     window.clearTimeout((flash as unknown as { t?: number }).t);
@@ -428,6 +502,15 @@ export default function UsersClient({
             <button onClick={() => setShowAdd(true)} disabled={busy} className={btnGhost}>
               등록
             </button>
+            {isAdmin && (
+              <button
+                onClick={removeSelected}
+                disabled={busy || selected.size === 0}
+                className="rounded border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-100 disabled:opacity-50"
+              >
+                선택 삭제{selected.size > 0 ? ` (${selected.size})` : ""}
+              </button>
+            )}
             <button
               onClick={saveAll}
               disabled={busy || dirtyIds.length === 0}
@@ -538,26 +621,38 @@ export default function UsersClient({
                     {isManager ? (
                       <Link
                         href={`/users/${r.id}`}
-                        className="text-sky-600 hover:underline"
+                        className={`hover:underline ${ROLE_NAME_CLS[r.role] || "text-sky-600"}`}
                         title="개인 정보 수정"
                       >
                         {r.name}
                       </Link>
                     ) : (
-                      r.name
+                      <span className={ROLE_NAME_CLS[r.role]}>{r.name}</span>
                     )}
                   </td>
                   <td className="px-1.5 py-1.5">
                     {isManager ? (
-                      <input
+                      <select
                         value={r.job}
                         disabled={!editable}
                         onChange={(e) => patch(r.id, { job: e.target.value })}
-                        className={`${cellInput} w-20`}
-                        placeholder="직업"
-                      />
+                        className={`${cellInput} w-16`}
+                        title={r.job || "미지정"}
+                      >
+                        <option value="">-</option>
+                        {!JOBS_ALL.includes(r.job) && r.job && (
+                          <option value={r.job}>{shortJob(r.job)}</option>
+                        )}
+                        {JOBS_ALL.map((j) => (
+                          <option key={j} value={j}>
+                            {shortJob(j)}
+                          </option>
+                        ))}
+                      </select>
                     ) : (
-                      <span className="text-neutral-700">{r.job || "-"}</span>
+                      <span className="text-neutral-700" title={r.job || "-"}>
+                        {r.job ? shortJob(r.job) : "-"}
+                      </span>
                     )}
                   </td>
                   <td className="px-1.5 py-1.5">
