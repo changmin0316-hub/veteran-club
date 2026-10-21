@@ -87,8 +87,8 @@ const JOB_SHORT: Record<string, string> = {
   뱅가드: "뱅가드",
   나이트레인저: "나레",
   디스트로이어: "디트",
-  버서커: "버서",
-  어쌔신: "어쌔",
+  버서커: "버서커",
+  어쌔신: "어쌔신",
 };
 const shortJob = (j: string) => JOB_SHORT[j] ?? j;
 // 군(소속) 색상 (order 기준 순환)

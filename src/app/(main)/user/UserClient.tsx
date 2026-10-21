@@ -11,7 +11,22 @@ const JOBS = [
   "워로드",
   "뱅가드",
   "나이트레인저",
+  "디스트로이어",
+  "어쌔신",
+  "버서커",
 ];
+const JOB_SHORT: Record<string, string> = {
+  엘리멘탈리스트: "엘리",
+  디바인캐스터: "디바인",
+  데스브링어: "데브",
+  건슬링어: "건슬",
+  워로드: "워로드",
+  뱅가드: "뱅가드",
+  나이트레인저: "나레",
+  디스트로이어: "디트",
+  어쌔신: "어쌔신",
+  버서커: "버서커",
+};
 
 interface Profile {
   name: string;
@@ -243,9 +258,12 @@ export default function UserClient({
               className={input}
             >
               <option value="">미지정</option>
+              {!JOBS.includes(form.job) && form.job && (
+                <option value={form.job}>{JOB_SHORT[form.job] ?? form.job}</option>
+              )}
               {JOBS.map((j) => (
                 <option key={j} value={j}>
-                  {j}
+                  {JOB_SHORT[j] ?? j}
                 </option>
               ))}
             </select>
