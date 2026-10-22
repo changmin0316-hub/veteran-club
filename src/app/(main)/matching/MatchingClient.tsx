@@ -208,31 +208,31 @@ export default function MatchingClient({
                   서버 리셋
                 </button>
               </div>
-              <div className="grid gap-2">
+              <div className="grid gap-3">
                 {groupByFaction(list).map(([fac, items]) => (
-                  <div
-                    key={fac}
-                    className="rounded-md border border-neutral-100 bg-neutral-50/40 p-2"
-                  >
-                    <div className="mb-1.5 flex items-center gap-1.5">
-                      <span className="rounded bg-neutral-200 px-1.5 py-0.5 text-[11px] font-bold text-neutral-700">
-                        {fac}
-                      </span>
+                  <div key={fac} className="grid gap-1.5">
+                    <div className="flex items-center gap-2 border-l-2 border-neutral-300 pl-2">
+                      <span className="text-xs font-bold text-neutral-600">{fac}</span>
                       <span className="text-[11px] text-neutral-400">{items.length}</span>
                     </div>
                     <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                       {items.map((g) => (
                         <span
                           key={g.id}
-                          className={`flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium ring-1 ${sideCls(g.side)}`}
+                          className="flex items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs"
                         >
-                          <span className="w-8 shrink-0 rounded bg-black/10 px-1 text-center text-[10px]">
+                          <span
+                            className={`w-9 shrink-0 rounded px-1 py-0.5 text-center text-[10px] font-bold text-white ${sideBg(g.side)}`}
+                          >
                             {g.side}
                           </span>
-                          <span className="min-w-0 flex-1 truncate" title={g.name}>
+                          <span
+                            className="min-w-0 flex-1 truncate font-medium text-neutral-800"
+                            title={g.name}
+                          >
                             {g.name}
                           </span>
-                          <span className="shrink-0 text-amber-500">
+                          <span className="shrink-0 text-xs text-amber-500">
                             {"★".repeat(g.grade)}
                           </span>
                           <button
@@ -273,8 +273,8 @@ function groupByFaction(list: MatchGuildRow[]): [string, MatchGuildRow[]][] {
   );
 }
 
-function sideCls(side: Side): string {
-  if (side === "아군") return "bg-sky-500/15 text-sky-300 ring-sky-500/40";
-  if (side === "적군") return "bg-red-500/15 text-red-300 ring-red-500/40";
-  return "bg-neutral-500/15 text-neutral-300 ring-neutral-500/40";
+function sideBg(side: Side): string {
+  if (side === "아군") return "bg-sky-600";
+  if (side === "적군") return "bg-rose-600";
+  return "bg-neutral-500";
 }
