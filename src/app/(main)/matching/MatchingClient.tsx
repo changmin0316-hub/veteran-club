@@ -208,32 +208,44 @@ export default function MatchingClient({
                   서버 리셋
                 </button>
               </div>
-              <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {list.map((g) => (
-                  <span
-                    key={g.id}
-                    className={`flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium ring-1 ${sideCls(g.side)}`}
+              <div className="grid gap-2">
+                {groupByFaction(list).map(([fac, items]) => (
+                  <div
+                    key={fac}
+                    className="rounded-md border border-neutral-100 bg-neutral-50/40 p-2"
                   >
-                    <span className="w-8 shrink-0 rounded bg-black/10 px-1 text-center text-[10px]">
-                      {g.side}
-                    </span>
-                    {g.faction && (
-                      <span className="w-12 shrink-0 rounded bg-black/10 px-1 text-center text-[10px]">
-                        {g.faction}
+                    <div className="mb-1.5 flex items-center gap-1.5">
+                      <span className="rounded bg-neutral-200 px-1.5 py-0.5 text-[11px] font-bold text-neutral-700">
+                        {fac}
                       </span>
-                    )}
-                    <span className="min-w-0 flex-1 truncate" title={g.name}>
-                      {g.name}
-                    </span>
-                    <span className="shrink-0 text-amber-500">{"★".repeat(g.grade)}</span>
-                    <button
-                      onClick={() => removeGuild(g.id)}
-                      className="shrink-0 text-neutral-400 hover:text-red-500"
-                      title="삭제"
-                    >
-                      ×
-                    </button>
-                  </span>
+                      <span className="text-[11px] text-neutral-400">{items.length}</span>
+                    </div>
+                    <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                      {items.map((g) => (
+                        <span
+                          key={g.id}
+                          className={`flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium ring-1 ${sideCls(g.side)}`}
+                        >
+                          <span className="w-8 shrink-0 rounded bg-black/10 px-1 text-center text-[10px]">
+                            {g.side}
+                          </span>
+                          <span className="min-w-0 flex-1 truncate" title={g.name}>
+                            {g.name}
+                          </span>
+                          <span className="shrink-0 text-amber-500">
+                            {"★".repeat(g.grade)}
+                          </span>
+                          <button
+                            onClick={() => removeGuild(g.id)}
+                            className="shrink-0 text-neutral-400 hover:text-red-500"
+                            title="삭제"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -246,6 +258,20 @@ export default function MatchingClient({
 
 const input =
   "w-full rounded border border-neutral-300 px-3 py-2 text-sm focus:border-sky-400 focus:outline-none";
+
+// 서버 내 길드를 세력(세부서버)별로 묶어 FACTIONS 순서로 반환
+function groupByFaction(list: MatchGuildRow[]): [string, MatchGuildRow[]][] {
+  const m = new Map<string, MatchGuildRow[]>();
+  for (const g of list) {
+    const f = g.faction || "기타";
+    if (!m.has(f)) m.set(f, []);
+    m.get(f)!.push(g);
+  }
+  const order = [...FACTIONS, "기타"];
+  return [...m.entries()].sort(
+    (a, b) => order.indexOf(a[0]) - order.indexOf(b[0])
+  );
+}
 
 function sideCls(side: Side): string {
   if (side === "아군") return "bg-sky-500/15 text-sky-300 ring-sky-500/40";
