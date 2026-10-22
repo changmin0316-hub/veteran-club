@@ -41,12 +41,29 @@ export default function MatchingClient({
   const [err, setErr] = useState("");
 
   const byServer = useMemo(() => {
+    const sideRank: Record<Side, number> = { 아군: 0, 중립: 1, 적군: 2 };
+    const facRank = (f: string) => {
+      const i = FACTIONS.indexOf(f);
+      return i < 0 ? 99 : i;
+    };
     const m = new Map<string, MatchGuildRow[]>();
     for (const g of initial) {
       if (!m.has(g.server)) m.set(g.server, []);
       m.get(g.server)!.push(g);
     }
-    return [...m.entries()];
+    // 서버는 지정 순서, 길드는 진영(아군→중립→적군)→세력→등급순 정렬
+    for (const list of m.values()) {
+      list.sort(
+        (a, b) =>
+          sideRank[a.side] - sideRank[b.side] ||
+          facRank(a.faction) - facRank(b.faction) ||
+          b.grade - a.grade ||
+          a.name.localeCompare(b.name)
+      );
+    }
+    return [...m.entries()].sort(
+      (a, b) => SERVERS.indexOf(a[0]) - SERVERS.indexOf(b[0])
+    );
   }, [initial]);
 
   async function add() {
@@ -191,21 +208,27 @@ export default function MatchingClient({
                   서버 리셋
                 </button>
               </div>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {list.map((g) => (
                   <span
                     key={g.id}
-                    className={`inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium ring-1 ${sideCls(g.side)}`}
+                    className={`flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium ring-1 ${sideCls(g.side)}`}
                   >
-                    <span className="rounded bg-black/10 px-1 text-[10px]">{g.side}</span>
+                    <span className="w-8 shrink-0 rounded bg-black/10 px-1 text-center text-[10px]">
+                      {g.side}
+                    </span>
                     {g.faction && (
-                      <span className="rounded bg-black/10 px-1 text-[10px]">{g.faction}</span>
+                      <span className="w-12 shrink-0 rounded bg-black/10 px-1 text-center text-[10px]">
+                        {g.faction}
+                      </span>
                     )}
-                    <span>{g.name}</span>
-                    <span className="text-amber-500">{"★".repeat(g.grade)}</span>
+                    <span className="min-w-0 flex-1 truncate" title={g.name}>
+                      {g.name}
+                    </span>
+                    <span className="shrink-0 text-amber-500">{"★".repeat(g.grade)}</span>
                     <button
                       onClick={() => removeGuild(g.id)}
-                      className="text-neutral-400 hover:text-red-500"
+                      className="shrink-0 text-neutral-400 hover:text-red-500"
                       title="삭제"
                     >
                       ×
