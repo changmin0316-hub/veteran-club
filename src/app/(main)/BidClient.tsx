@@ -6,6 +6,7 @@ export interface BidItem {
   eventItemId: number;
   name: string;
   rarity: string;
+  basePrice: number;
   bidCount: number;
   mine: boolean;
 }
@@ -196,7 +197,10 @@ export default function BidClient({
                       <span className={sel ? "font-medium text-sky-700" : ""}>
                         {it.name}
                       </span>
-                      <span className="text-neutral-400">/ {it.bidCount}</span>
+                      <span className="text-amber-600">
+                        {it.basePrice.toLocaleString()}원
+                      </span>
+                      <span className="text-neutral-400">/ 신청 {it.bidCount}</span>
                     </span>
                     <span className="text-xs text-neutral-400">
                       {sel ? "선택됨 (클릭시 취소)" : ""}

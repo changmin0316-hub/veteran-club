@@ -93,6 +93,7 @@ async function buildBidView(
       eventItemId: ei.id,
       name: ei.item.name,
       rarity: ei.item.rarity,
+      basePrice: ei.item.basePrice,
       bidCount: ei._count.bids,
       mine: myBidSet.has(ei.id),
     })),
