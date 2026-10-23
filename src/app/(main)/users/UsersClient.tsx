@@ -183,8 +183,11 @@ export default function UsersClient({
               ? r.attack + r.defense + r.accuracy
               : r[sort.key];
     return [...filtered].sort((a, b) => {
-      const rr = ROLE_RANK[b.role] - ROLE_RANK[a.role];
-      if (rr !== 0) return rr;
+      // 정렬 미선택(첫 화면)일 때만 관리자/운영진을 상단 고정
+      if (!sort) {
+        const rr = ROLE_RANK[b.role] - ROLE_RANK[a.role];
+        if (rr !== 0) return rr;
+      }
       const va = val(a);
       const vb = val(b);
       if (typeof va === "string" && typeof vb === "string")
