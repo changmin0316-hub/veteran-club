@@ -25,6 +25,22 @@ export default function ItemClient({
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  // 기본가격 입력 중 값 (행별)
+  const [priceEdits, setPriceEdits] = useState<Record<number, string>>({});
+
+  async function savePrice(row: ItemRow) {
+    const raw = priceEdits[row.id];
+    if (raw === undefined) return;
+    const price = Math.max(0, Number(raw) || 0);
+    await patch(row, { basePrice: price });
+    setRows((rs) => rs.map((r) => (r.id === row.id ? { ...r, basePrice: price } : r)));
+    setPriceEdits((p) => {
+      const n = { ...p };
+      delete n[row.id];
+      return n;
+    });
+    flash(`${row.name} 기본가격 저장`);
+  }
 
   // 등록 폼
   const [newName, setNewName] = useState("");
@@ -220,16 +236,31 @@ export default function ItemClient({
                   </select>
                 </td>
                 <td className="px-3 py-1.5 text-right">
-                  <input
-                    type="number"
-                    min={0}
-                    defaultValue={r.basePrice}
-                    onBlur={(e) =>
-                      Number(e.target.value) !== r.basePrice &&
-                      patch(r, { basePrice: Number(e.target.value) })
-                    }
-                    className="w-24 rounded border border-transparent px-2 py-1 text-right hover:border-neutral-200 focus:border-sky-400 focus:outline-none"
-                  />
+                  <div className="flex items-center justify-end gap-1.5">
+                    <input
+                      type="number"
+                      min={0}
+                      value={priceEdits[r.id] ?? String(r.basePrice)}
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) =>
+                        setPriceEdits((p) => ({ ...p, [r.id]: e.target.value }))
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") savePrice(r);
+                      }}
+                      className="w-24 rounded border border-neutral-300 px-2 py-1 text-right focus:border-sky-400 focus:outline-none"
+                    />
+                    <button
+                      onClick={() => savePrice(r)}
+                      disabled={
+                        priceEdits[r.id] === undefined ||
+                        Number(priceEdits[r.id]) === r.basePrice
+                      }
+                      className="rounded bg-sky-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-sky-700 disabled:opacity-40"
+                    >
+                      저장
+                    </button>
+                  </div>
                 </td>
                 <td className="px-3 py-1.5 text-center">
                   <button
