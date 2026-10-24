@@ -230,6 +230,25 @@ export default function AwardsClient({
       .sort((a, b) => b.total - a.total || a.itemName.localeCompare(b.itemName));
   }, [payoutFiltered]);
 
+  // 아이템명별 고정 색상 맵 (총수량 많은 순으로 팔레트 순환 → 인접 아이템은 서로 다른 색)
+  const itemColor = useMemo(() => {
+    const totals = new Map<string, number>();
+    for (const d of donations)
+      totals.set(d.itemName, (totals.get(d.itemName) ?? 0) + d.quantity);
+    for (const d of payouts)
+      totals.set(d.itemName, (totals.get(d.itemName) ?? 0) + d.quantity);
+    const ordered = [...totals.entries()].sort(
+      (a, b) => b[1] - a[1] || a[0].localeCompare(b[0])
+    );
+    const map = new Map<string, string>();
+    ordered.forEach(([name], i) =>
+      map.set(name, OCCASION_PALETTE[i % OCCASION_PALETTE.length])
+    );
+    return map;
+  }, [donations, payouts]);
+  const itemCls = (name: string) =>
+    itemColor.get(name) ?? occasionClass(name);
+
   const payoutTotal = useMemo(
     () => payoutFiltered.reduce((s, d) => s + d.quantity, 0),
     [payoutFiltered]
@@ -642,7 +661,11 @@ export default function AwardsClient({
                     <span className="rounded bg-sky-500/15 px-1.5 py-0.5 text-[11px] font-bold text-sky-600 ring-1 ring-sky-500/40">
                       기부
                     </span>
-                    <span className="font-semibold">{it.itemName}</span>
+                    <span
+                      className={`rounded px-2 py-0.5 text-sm font-semibold ring-1 ${itemCls(it.itemName)}`}
+                    >
+                      {it.itemName}
+                    </span>
                     <span className="ml-auto rounded bg-sky-100 px-2.5 py-0.5 text-xs font-medium text-sky-700">
                       총 {it.total.toLocaleString()}개
                     </span>
@@ -765,7 +788,11 @@ export default function AwardsClient({
                     <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-[11px] font-bold text-emerald-600 ring-1 ring-emerald-500/40">
                       지급
                     </span>
-                    <span className="font-semibold">{it.itemName}</span>
+                    <span
+                      className={`rounded px-2 py-0.5 text-sm font-semibold ring-1 ${itemCls(it.itemName)}`}
+                    >
+                      {it.itemName}
+                    </span>
                     <span className="ml-auto rounded bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
                       총 {it.total.toLocaleString()}개
                     </span>
@@ -831,10 +858,10 @@ export default function AwardsClient({
                         <td className="px-3 py-2 font-semibold text-neutral-800">{m.name}</td>
                         <td className="px-3 py-2 text-neutral-500">{guildName(m.guildId)}</td>
                         <td className="bg-sky-500/5 px-3 py-2">
-                          <ItemChips items={m.donate} />
+                          <ItemChips items={m.donate} colorOf={itemCls} />
                         </td>
                         <td className="border-l border-neutral-200 bg-emerald-500/5 px-3 py-2">
-                          <ItemChips items={m.payout} />
+                          <ItemChips items={m.payout} colorOf={itemCls} />
                         </td>
                       </tr>
                     ))}
@@ -851,18 +878,22 @@ export default function AwardsClient({
 
 function ItemChips({
   items,
+  colorOf,
 }: {
   items: { itemName: string; qty: number }[];
+  colorOf?: (name: string) => string;
 }) {
   if (items.length === 0)
     return <span className="text-xs text-neutral-300">-</span>;
-  // tone은 기부(파랑)/지급(초록) 구분 테두리 강조에만 사용, 칩 색은 아이템명별로 구분
+  // 아이템명별 고정 색상 (colorOf 우선, 없으면 해시 팔레트)
   return (
     <div className="flex flex-wrap gap-1">
       {items.map((it) => (
         <span
           key={it.itemName}
-          className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium ring-1 ${occasionClass(it.itemName)}`}
+          className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium ring-1 ${
+            colorOf ? colorOf(it.itemName) : occasionClass(it.itemName)
+          }`}
         >
           <span>{it.itemName}</span>
           <span className="font-bold tabular-nums">{it.qty.toLocaleString()}개</span>
