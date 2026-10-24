@@ -148,8 +148,12 @@ export default function AwardsClient({
       e.rows.push(d);
     }
     return [...map.entries()]
-      .map(([itemName, v]) => ({ itemName, ...v }))
-      .sort((a, b) => b.total - a.total);
+      .map(([itemName, v]) => ({
+        itemName,
+        total: v.total,
+        rows: [...v.rows].sort((a, b) => b.quantity - a.quantity),
+      }))
+      .sort((a, b) => b.total - a.total || a.itemName.localeCompare(b.itemName));
   }, [donateFiltered]);
 
   const donateTotal = useMemo(
@@ -212,8 +216,12 @@ export default function AwardsClient({
       e.rows.push(d);
     }
     return [...map.entries()]
-      .map(([itemName, v]) => ({ itemName, ...v }))
-      .sort((a, b) => b.total - a.total);
+      .map(([itemName, v]) => ({
+        itemName,
+        total: v.total,
+        rows: [...v.rows].sort((a, b) => b.quantity - a.quantity),
+      }))
+      .sort((a, b) => b.total - a.total || a.itemName.localeCompare(b.itemName));
   }, [payoutFiltered]);
 
   const payoutTotal = useMemo(
@@ -765,44 +773,28 @@ export default function AwardsClient({
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-neutral-200 bg-neutral-50 text-neutral-600">
-                      <th className="w-12 px-3 py-2.5 text-center font-semibold">순위</th>
                       <th className="px-3 py-2.5 text-left font-semibold">길드원</th>
                       <th className="px-3 py-2.5 text-left font-semibold">소속</th>
                       <th className="px-3 py-2.5 text-left font-semibold text-sky-700">
                         📥 기부 (아이템별)
                       </th>
-                      <th className="border-l border-neutral-100 px-3 py-2.5 text-left font-semibold text-emerald-700">
+                      <th className="border-l border-neutral-200 px-3 py-2.5 text-left font-semibold text-emerald-700">
                         📤 지급 (아이템별)
                       </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {giftByMember.map((m, i) => (
+                    {giftByMember.map((m) => (
                       <tr
                         key={m.memberId}
-                        className="border-b border-neutral-50 align-top odd:bg-neutral-50/40"
+                        className="border-b border-neutral-100 align-top"
                       >
-                        <td className="px-3 py-2 text-center">
-                          <span
-                            className={`inline-flex h-5 min-w-5 items-center justify-center rounded px-1 text-xs font-bold ${
-                              i === 0
-                                ? "bg-amber-400 text-white"
-                                : i === 1
-                                  ? "bg-neutral-400 text-white"
-                                  : i === 2
-                                    ? "bg-amber-700 text-white"
-                                    : "text-neutral-400"
-                            }`}
-                          >
-                            {i + 1}
-                          </span>
-                        </td>
                         <td className="px-3 py-2 font-semibold text-neutral-800">{m.name}</td>
                         <td className="px-3 py-2 text-neutral-500">{guildName(m.guildId)}</td>
-                        <td className="bg-sky-50/50 px-3 py-2">
+                        <td className="bg-sky-500/5 px-3 py-2">
                           <ItemChips items={m.donate} />
                         </td>
-                        <td className="border-l border-neutral-100 bg-emerald-50/50 px-3 py-2">
+                        <td className="border-l border-neutral-200 bg-emerald-500/5 px-3 py-2">
                           <ItemChips items={m.payout} />
                         </td>
                       </tr>
