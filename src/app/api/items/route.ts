@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim() ?? "";
   const limit = Math.min(
     Number(req.nextUrl.searchParams.get("limit")) || 30,
-    100
+    3000
   );
   const items = await prisma.item.findMany({
     where: q ? { name: { contains: q } } : undefined,
