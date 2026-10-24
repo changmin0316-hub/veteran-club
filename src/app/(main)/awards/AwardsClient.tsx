@@ -380,10 +380,10 @@ export default function AwardsClient({
         </div>
       ) : (
         <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <Card label="총 기부 수량" value={`${donateTotal.toLocaleString()}개`} tone="sky" />
-          <Card label="총 지급 수량" value={`${payoutTotal.toLocaleString()}개`} tone="emerald" />
-          <Card label="기부 품목" value={`${donateByItem.length}종`} />
-          <Card label="지급 품목" value={`${payoutByItem.length}종`} />
+          <Card label="📥 총 기부 수량" value={`${donateTotal.toLocaleString()}개`} tone="sky" />
+          <Card label="📥 기부 품목" value={`${donateByItem.length}종`} tone="sky" />
+          <Card label="📤 총 지급 수량" value={`${payoutTotal.toLocaleString()}개`} tone="emerald" />
+          <Card label="📤 지급 품목" value={`${payoutByItem.length}종`} tone="emerald" />
         </div>
       )}
 
@@ -761,36 +761,55 @@ export default function AwardsClient({
               <div className="border-b border-neutral-100 px-4 py-2.5 text-sm font-semibold text-neutral-700">
                 전체 통계 (길드원별)
               </div>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-neutral-200 bg-neutral-50 text-neutral-600">
-                    <th className="px-3 py-2.5 text-left font-semibold">순위</th>
-                    <th className="px-3 py-2.5 text-left font-semibold">길드원</th>
-                    <th className="px-3 py-2.5 text-left font-semibold">소속</th>
-                    <th className="px-3 py-2.5 text-left font-semibold text-sky-700">
-                      기부 (아이템별)
-                    </th>
-                    <th className="px-3 py-2.5 text-left font-semibold text-emerald-700">
-                      지급 (아이템별)
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {giftByMember.map((m, i) => (
-                    <tr key={m.memberId} className="border-b border-neutral-50 align-top">
-                      <td className="px-3 py-2 text-neutral-400">{i + 1}</td>
-                      <td className="px-3 py-2 font-medium">{m.name}</td>
-                      <td className="px-3 py-2 text-neutral-500">{guildName(m.guildId)}</td>
-                      <td className="px-3 py-2">
-                        <ItemChips items={m.donate} />
-                      </td>
-                      <td className="px-3 py-2">
-                        <ItemChips items={m.payout} />
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-neutral-200 bg-neutral-50 text-neutral-600">
+                      <th className="w-12 px-3 py-2.5 text-center font-semibold">순위</th>
+                      <th className="px-3 py-2.5 text-left font-semibold">길드원</th>
+                      <th className="px-3 py-2.5 text-left font-semibold">소속</th>
+                      <th className="px-3 py-2.5 text-left font-semibold text-sky-700">
+                        📥 기부 (아이템별)
+                      </th>
+                      <th className="border-l border-neutral-100 px-3 py-2.5 text-left font-semibold text-emerald-700">
+                        📤 지급 (아이템별)
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {giftByMember.map((m, i) => (
+                      <tr
+                        key={m.memberId}
+                        className="border-b border-neutral-50 align-top odd:bg-neutral-50/40"
+                      >
+                        <td className="px-3 py-2 text-center">
+                          <span
+                            className={`inline-flex h-5 min-w-5 items-center justify-center rounded px-1 text-xs font-bold ${
+                              i === 0
+                                ? "bg-amber-400 text-white"
+                                : i === 1
+                                  ? "bg-neutral-400 text-white"
+                                  : i === 2
+                                    ? "bg-amber-700 text-white"
+                                    : "text-neutral-400"
+                            }`}
+                          >
+                            {i + 1}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 font-semibold text-neutral-800">{m.name}</td>
+                        <td className="px-3 py-2 text-neutral-500">{guildName(m.guildId)}</td>
+                        <td className="bg-sky-50/50 px-3 py-2">
+                          <ItemChips items={m.donate} />
+                        </td>
+                        <td className="border-l border-neutral-100 bg-emerald-50/50 px-3 py-2">
+                          <ItemChips items={m.payout} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
