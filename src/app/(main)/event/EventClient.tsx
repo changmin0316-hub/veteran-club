@@ -1,6 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+// 한글 초성 매칭 유틸 (예: "글로리 바인드" ↔ "ㄱㄹㄹ")
+const CHO = [
+  "ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅆ",
+  "ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ",
+];
+function chosungOf(s: string): string {
+  let out = "";
+  for (const ch of s) {
+    const code = ch.charCodeAt(0);
+    if (code >= 0xac00 && code <= 0xd7a3) {
+      out += CHO[Math.floor((code - 0xac00) / 588)];
+    } else {
+      out += ch;
+    }
+  }
+  return out;
+}
+const norm = (s: string) => s.toLowerCase().replace(/\s+/g, "");
+function matchItem(name: string, q: string): boolean {
+  const nq = norm(q);
+  if (!nq) return true;
+  const nn = norm(name);
+  if (nn.includes(nq)) return true;
+  return norm(chosungOf(name)).includes(nq);
+}
 
 export interface EventRow {
   id: number;
@@ -316,35 +342,33 @@ function ItemRegisterModal({
 }) {
   const [items, setItems] = useState<EventItem[]>([]);
   const [q, setQ] = useState("");
-  const [results, setResults] = useState<ItemMaster[]>([]);
+  const [allItems, setAllItems] = useState<ItemMaster[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
-      const res = await fetch(`/api/events/${event.id}/items`);
-      const d = await res.json();
-      setItems(d.items ?? []);
+      const [r1, r2] = await Promise.all([
+        fetch(`/api/events/${event.id}/items`),
+        fetch(`/api/items?limit=2000`),
+      ]);
+      const d1 = await r1.json();
+      const d2 = await r2.json();
+      setItems(d1.items ?? []);
+      setAllItems(d2.items ?? []);
       setLoading(false);
     })();
   }, [event.id]);
 
-  useEffect(() => {
-    const q2 = q.trim();
-    if (!q2) {
-      setResults([]);
-      return;
-    }
-    const t = setTimeout(async () => {
-      const res = await fetch(`/api/items?q=${encodeURIComponent(q2)}`);
-      const d = await res.json();
-      setResults(d.items ?? []);
-    }, 250);
-    return () => clearTimeout(t);
-  }, [q]);
-
   const addedItemIds = new Set(items.map((i) => i.item.id));
+
+  // 초성 포함 검색 (클라이언트 필터)
+  const results = useMemo(() => {
+    const q2 = q.trim();
+    if (!q2) return [];
+    return allItems.filter((it) => matchItem(it.name, q2)).slice(0, 50);
+  }, [q, allItems]);
 
   async function addItem(itemId: number) {
     setBusy(true);
