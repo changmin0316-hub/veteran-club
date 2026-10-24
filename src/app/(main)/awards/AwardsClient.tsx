@@ -163,6 +163,7 @@ export default function AwardsClient({
 
   // 지급 입력
   const [pItem, setPItem] = useState("");
+  const [pOccasion, setPOccasion] = useState("");
   const [pMember, setPMember] = useState<number | "">("");
   const [pQty, setPQty] = useState("");
   const [pBusy, setPBusy] = useState(false);
@@ -179,7 +180,12 @@ export default function AwardsClient({
       const res = await fetch("/api/payouts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itemName: pItem.trim(), memberId: pMember, quantity: qty }),
+        body: JSON.stringify({
+          itemName: pItem.trim(),
+          occasion: pOccasion.trim() || undefined,
+          memberId: pMember,
+          quantity: qty,
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -252,27 +258,44 @@ export default function AwardsClient({
         });
       return map.get(d.memberId)!;
     };
+    // 전역 아이템 순서(총수량 많은 순 → 가나다): 모든 길드원에서 동일 순서로 표시
+    const gdTotals = new Map<string, number>();
+    const gpTotals = new Map<string, number>();
     for (const d of donateFiltered) {
       const r = ensure(d);
       r.donate.set(d.itemName, (r.donate.get(d.itemName) ?? 0) + d.quantity);
       r.order += d.quantity;
+      gdTotals.set(d.itemName, (gdTotals.get(d.itemName) ?? 0) + d.quantity);
     }
     for (const d of payoutFiltered) {
       const r = ensure(d);
       r.payout.set(d.itemName, (r.payout.get(d.itemName) ?? 0) + d.quantity);
       r.order += d.quantity;
+      gpTotals.set(d.itemName, (gpTotals.get(d.itemName) ?? 0) + d.quantity);
     }
-    const toItems = (m: Map<string, number>) =>
+    const orderOf = (totals: Map<string, number>) => {
+      const idx = new Map<string, number>();
+      [...totals.entries()]
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .forEach(([name], i) => idx.set(name, i));
+      return idx;
+    };
+    const dOrder = orderOf(gdTotals);
+    const pOrder = orderOf(gpTotals);
+    const toItems = (m: Map<string, number>, order: Map<string, number>) =>
       [...m.entries()]
         .map(([itemName, qty]) => ({ itemName, qty }))
-        .sort((a, b) => b.qty - a.qty);
+        .sort(
+          (a, b) =>
+            (order.get(a.itemName) ?? 999) - (order.get(b.itemName) ?? 999)
+        );
     return [...map.values()]
       .map((r) => ({
         memberId: r.memberId,
         name: r.name,
         guildId: r.guildId,
-        donate: toItems(r.donate),
-        payout: toItems(r.payout),
+        donate: toItems(r.donate, dOrder),
+        payout: toItems(r.payout, pOrder),
         order: r.order,
       }))
       .sort((a, b) => b.order - a.order);
@@ -670,6 +693,15 @@ export default function AwardsClient({
                   className="w-full rounded border border-neutral-300 px-3 py-1.5 text-sm focus:border-sky-400 focus:outline-none"
                 />
               </div>
+              <div className="w-28">
+                <label className="mb-1 block text-xs text-neutral-500">날짜/회차</label>
+                <input
+                  value={pOccasion}
+                  onChange={(e) => setPOccasion(e.target.value)}
+                  placeholder="예) 10월3일 · 1차"
+                  className="w-full rounded border border-neutral-300 px-3 py-1.5 text-sm focus:border-sky-400 focus:outline-none"
+                />
+              </div>
               <div className="min-w-[130px]">
                 <label className="mb-1 block text-xs text-neutral-500">지급받은 길드원</label>
                 <select
@@ -744,6 +776,13 @@ export default function AwardsClient({
                         key={r.id}
                         className="inline-flex items-center gap-1.5 rounded bg-neutral-100 px-2 py-1 text-xs text-neutral-700"
                       >
+                        {r.occasion && (
+                          <span
+                            className={`rounded px-1.5 py-0.5 text-[11px] font-medium ring-1 ${occasionClass(r.occasion)}`}
+                          >
+                            {r.occasion}
+                          </span>
+                        )}
                         <span className="font-medium">{r.memberName}</span>
                         <span className="tabular-nums">{r.quantity.toLocaleString()}개</span>
                         {isManager && (
