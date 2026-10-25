@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireManager, AuthError } from "@/lib/guard";
+import { logActivity } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 
@@ -31,8 +32,9 @@ const createSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  let me;
   try {
-    await requireManager();
+    me = await requireManager();
   } catch (e) {
     return handleAuth(e);
   }
@@ -52,6 +54,12 @@ export async function POST(req: NextRequest) {
       active: true,
     },
     include: { _count: { select: { items: true } }, week: true, guild: true },
+  });
+  await logActivity({
+    actorId: me.memberId,
+    actorName: me.name,
+    action: "분배 등록(이벤트)",
+    detail: `${event.name} 생성`,
   });
   return NextResponse.json({ event }, { status: 201 });
 }

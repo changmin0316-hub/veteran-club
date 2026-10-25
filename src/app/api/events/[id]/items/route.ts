@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireManager, AuthError } from "@/lib/guard";
+import { logActivity } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 
@@ -37,8 +38,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let me;
   try {
-    await requireManager();
+    me = await requireManager();
   } catch (e) {
     return handleAuth(e);
   }
@@ -54,6 +56,12 @@ export async function POST(
     data: { eventId, itemId: parsed.data.itemId },
     include: { item: true, _count: { select: { bids: true } } },
   });
+  await logActivity({
+    actorId: me.memberId,
+    actorName: me.name,
+    action: "분배 아이템 추가",
+    detail: eventItem.item.name,
+  });
   return NextResponse.json({ eventItem }, { status: 201 });
 }
 
@@ -62,8 +70,9 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let me;
   try {
-    await requireManager();
+    me = await requireManager();
   } catch (e) {
     return handleAuth(e);
   }
@@ -72,8 +81,18 @@ export async function DELETE(
   if (!Number.isInteger(eventItemId)) {
     return NextResponse.json({ message: "잘못된 대상입니다." }, { status: 400 });
   }
+  const ei = await prisma.eventItem.findUnique({
+    where: { id: eventItemId },
+    include: { item: { select: { name: true } } },
+  });
   await prisma.eventItem.delete({
     where: { id: eventItemId, eventId: Number(id) },
+  });
+  await logActivity({
+    actorId: me.memberId,
+    actorName: me.name,
+    action: "분배 아이템 제거",
+    detail: ei?.item.name ?? String(eventItemId),
   });
   return NextResponse.json({ message: "ok" });
 }

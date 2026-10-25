@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireManager, AuthError } from "@/lib/guard";
+import { logActivity } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 
@@ -20,8 +21,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let me;
   try {
-    await requireManager();
+    me = await requireManager();
   } catch (e) {
     return handleAuth(e);
   }
@@ -47,6 +49,13 @@ export async function POST(
       prisma.settlementExclusion.create({ data: { weekId, memberId } })
     ),
   ]);
+
+  await logActivity({
+    actorId: me.memberId,
+    actorName: me.name,
+    action: "분배 제외 설정",
+    detail: `주차 ${weekId} · 제외 ${parsed.data.memberIds.length}명`,
+  });
 
   return NextResponse.json({ message: "ok", count: parsed.data.memberIds.length });
 }

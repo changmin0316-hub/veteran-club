@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireManager, AuthError } from "@/lib/guard";
+import { logActivity } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 
@@ -26,8 +27,9 @@ const schema = z.object({
 
 // 출석 기록 일괄 저장(업서트)
 export async function POST(req: NextRequest) {
+  let me;
   try {
-    await requireManager();
+    me = await requireManager();
   } catch (e) {
     return handleAuth(e);
   }
@@ -66,6 +68,13 @@ export async function POST(req: NextRequest) {
       })
     )
   );
+
+  await logActivity({
+    actorId: me.memberId,
+    actorName: me.name,
+    action: "출석 수정",
+    detail: `${entries.length}건 저장 (주차 ${weekId})`,
+  });
 
   return NextResponse.json({ message: "ok", saved: entries.length });
 }

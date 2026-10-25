@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireManager, AuthError } from "@/lib/guard";
+import { logActivity } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 
@@ -22,8 +23,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let me;
   try {
-    await requireManager();
+    me = await requireManager();
   } catch (e) {
     return handleAuth(e);
   }
@@ -42,6 +44,12 @@ export async function PATCH(
     data: parsed.data,
     include: { _count: { select: { items: true } }, week: true },
   });
+  await logActivity({
+    actorId: me.memberId,
+    actorName: me.name,
+    action: "분배 이벤트 수정",
+    detail: `${event.name} 변경`,
+  });
   return NextResponse.json({ event });
 }
 
@@ -49,12 +57,20 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let me;
   try {
-    await requireManager();
+    me = await requireManager();
   } catch (e) {
     return handleAuth(e);
   }
   const { id } = await params;
+  const ev = await prisma.event.findUnique({ where: { id: Number(id) }, select: { name: true } });
   await prisma.event.delete({ where: { id: Number(id) } });
+  await logActivity({
+    actorId: me.memberId,
+    actorName: me.name,
+    action: "분배 이벤트 삭제",
+    detail: `${ev?.name ?? id} 삭제`,
+  });
   return NextResponse.json({ message: "ok" });
 }

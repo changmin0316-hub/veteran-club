@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireManager, AuthError } from "@/lib/guard";
+import { logActivity } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 
@@ -14,8 +15,9 @@ const schema = z.object({
 
 // 출석 등록: 선택한 참석자의 (주차, 카테고리) 출석 횟수를 delta 만큼 증가
 export async function POST(req: NextRequest) {
+  let me;
   try {
-    await requireManager();
+    me = await requireManager();
   } catch (e) {
     if (e instanceof AuthError)
       return NextResponse.json({ message: e.message }, { status: e.status });
@@ -61,6 +63,13 @@ export async function POST(req: NextRequest) {
   await prisma.attendanceRecord.updateMany({
     where: { weekId, categoryId, count: { lt: 0 } },
     data: { count: 0 },
+  });
+
+  await logActivity({
+    actorId: me.memberId,
+    actorName: me.name,
+    action: "출석 등록",
+    detail: `${memberIds.length}명 (주차 ${weekId})`,
   });
 
   return NextResponse.json({ message: "ok", registered: memberIds.length });

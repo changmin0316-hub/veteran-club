@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireManager, AuthError } from "@/lib/guard";
+import { logActivity } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 
@@ -28,8 +29,9 @@ const createSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  let me;
   try {
-    await requireManager();
+    me = await requireManager();
   } catch (e) {
     return handleAuth(e);
   }
@@ -54,6 +56,12 @@ export async function POST(req: NextRequest) {
   }
   const week = await prisma.week.create({
     data: { number, name: parsed.data.name },
+  });
+  await logActivity({
+    actorId: me.memberId,
+    actorName: me.name,
+    action: "주차 등록",
+    detail: week.name ?? `${week.number}주차`,
   });
   return NextResponse.json({ week }, { status: 201 });
 }

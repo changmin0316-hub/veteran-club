@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireManager, AuthError } from "@/lib/guard";
+import { logActivity } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 
@@ -22,8 +23,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let me;
   try {
-    await requireManager();
+    me = await requireManager();
   } catch (e) {
     return handleAuth(e);
   }
@@ -59,6 +61,23 @@ export async function PATCH(
   const week = await prisma.week.update({
     where: { id: weekId },
     data,
+  });
+  const wname = week.name ?? `${week.number}주차`;
+  const act =
+    data.settled === true
+      ? "분배 완료"
+      : data.settled === false
+        ? "분배 완료 취소"
+        : data.diamond !== undefined
+          ? "정산금 입력"
+          : data.excludeRatio !== undefined
+            ? "힐비 비율 변경"
+            : "주차 수정";
+  await logActivity({
+    actorId: me.memberId,
+    actorName: me.name,
+    action: act,
+    detail: `${wname}${data.diamond !== undefined ? ` · ${data.diamond} 다이아` : ""}${data.excludeRatio !== undefined ? ` · 힐비 ${data.excludeRatio}%` : ""}`,
   });
   return NextResponse.json({ week });
 }

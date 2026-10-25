@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireManager, AuthError } from "@/lib/guard";
+import { logActivity } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 
@@ -15,8 +16,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let me;
   try {
-    await requireManager();
+    me = await requireManager();
   } catch (e) {
     if (e instanceof AuthError)
       return NextResponse.json({ message: e.message }, { status: e.status });
@@ -43,5 +45,13 @@ export async function POST(
   } else {
     await prisma.settlementPaid.deleteMany({ where: { weekId, memberId } });
   }
+  const tm = await prisma.member.findUnique({ where: { id: memberId }, select: { name: true } });
+  await logActivity({
+    actorId: me.memberId,
+    actorName: me.name,
+    action: paid ? "지급 완료 표시" : "지급 완료 해제",
+    detail: `주차 ${weekId} · ${tm?.name ?? memberId}`,
+    targetMemberId: memberId,
+  });
   return NextResponse.json({ ok: true, paid });
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireManager, AuthError } from "@/lib/guard";
+import { logActivity } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 
@@ -15,8 +16,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let me;
   try {
-    await requireManager();
+    me = await requireManager();
   } catch (e) {
     if (e instanceof AuthError)
       return NextResponse.json({ message: e.message }, { status: e.status });
@@ -42,6 +44,13 @@ export async function POST(
 
   if (amount === 0) {
     await prisma.extraPay.deleteMany({ where: { weekId, memberId } });
+    await logActivity({
+      actorId: me.memberId,
+      actorName: me.name,
+      action: "추가 분배금",
+      detail: `주차 ${weekId} · 해제`,
+      targetMemberId: memberId,
+    });
     return NextResponse.json({ message: "ok", amount: 0 });
   }
 
@@ -49,6 +58,13 @@ export async function POST(
     where: { weekId_memberId: { weekId, memberId } },
     create: { weekId, memberId, amount },
     update: { amount },
+  });
+  await logActivity({
+    actorId: me.memberId,
+    actorName: me.name,
+    action: "추가 분배금",
+    detail: `주차 ${weekId} · ${amount.toLocaleString()}원`,
+    targetMemberId: memberId,
   });
   return NextResponse.json({ message: "ok", amount });
 }

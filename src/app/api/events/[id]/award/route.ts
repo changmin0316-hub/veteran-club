@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireAdmin, AuthError } from "@/lib/guard";
+import { logActivity } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 
@@ -15,8 +16,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let me;
   try {
-    await requireAdmin();
+    me = await requireAdmin();
   } catch (e) {
     if (e instanceof AuthError)
       return NextResponse.json({ message: e.message }, { status: e.status });
@@ -54,6 +56,18 @@ export async function POST(
   await prisma.eventItem.update({
     where: { id: ei.id },
     data: { winnerId: parsed.data.winnerId },
+  });
+
+  const item = await prisma.item.findUnique({ where: { id: ei.itemId }, select: { name: true } });
+  const winner = parsed.data.winnerId
+    ? await prisma.member.findUnique({ where: { id: parsed.data.winnerId }, select: { name: true } })
+    : null;
+  await logActivity({
+    actorId: me.memberId,
+    actorName: me.name,
+    action: parsed.data.winnerId ? "낙찰 지정" : "낙찰 취소",
+    detail: `${item?.name ?? "아이템"}${winner ? ` → ${winner.name}` : ""}`,
+    targetMemberId: parsed.data.winnerId ?? null,
   });
 
   return NextResponse.json({ message: "ok", winnerId: parsed.data.winnerId });

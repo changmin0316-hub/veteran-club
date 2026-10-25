@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireAdmin, AuthError } from "@/lib/guard";
+import { logActivity } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 
@@ -9,8 +10,9 @@ const schema = z.object({ weekId: z.number().int().positive() });
 
 // 주차별 출석 기록 전체 삭제 (관리자 전용, 되돌릴 수 없음)
 export async function POST(req: NextRequest) {
+  let me;
   try {
-    await requireAdmin();
+    me = await requireAdmin();
   } catch (e) {
     if (e instanceof AuthError)
       return NextResponse.json({ message: e.message }, { status: e.status });
@@ -30,6 +32,12 @@ export async function POST(req: NextRequest) {
   }
   const r = await prisma.attendanceRecord.deleteMany({
     where: { weekId: parsed.data.weekId },
+  });
+  await logActivity({
+    actorId: me.memberId,
+    actorName: me.name,
+    action: "출석 초기화",
+    detail: `주차 ${parsed.data.weekId} · ${r.count}건 삭제`,
   });
   return NextResponse.json({ message: "ok", deleted: r.count });
 }
