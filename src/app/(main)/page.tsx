@@ -43,7 +43,7 @@ async function buildBidView(
       week: true,
       items: {
         include: { item: true, _count: { select: { bids: true } } },
-        orderBy: { id: "asc" },
+        orderBy: { item: { name: "asc" } },
       },
     },
   });

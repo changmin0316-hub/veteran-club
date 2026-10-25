@@ -25,7 +25,7 @@ export async function GET(
   const items = await prisma.eventItem.findMany({
     where: { eventId: Number(id) },
     include: { item: true, _count: { select: { bids: true } } },
-    orderBy: { id: "asc" },
+    orderBy: { item: { name: "asc" } },
   });
   return NextResponse.json({ items });
 }
