@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { WeekOpt, GuildOpt } from "../settlement-types";
 import { useSettlement } from "../useSettlement";
 import { WeekSelect, GuildTabs, SortTh, useRowSort } from "../SettlementControls";
+import SessionManager from "./SessionManager";
 
 type Edits = Record<string, number>; // `${memberId}:${categoryId}` -> count
 
@@ -257,6 +258,9 @@ export default function AttendanceClient({
           : "출석율은 최고 출석자 대비 비율입니다. 파란 '나' 표시가 본인 행입니다."}
       </p>
 
+      {isManager && (
+        <SessionManager weekId={weekId} settled={settled} onChanged={reload} />
+      )}
     </section>
   );
 }

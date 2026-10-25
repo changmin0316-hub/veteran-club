@@ -109,6 +109,7 @@ model Week {
   exclusions  SettlementExclusion[]
   extraPays   ExtraPay[]
   paidMarks   SettlementPaid[]
+  attendanceSessions AttendanceSession[]
 }
 
 /// 주차별 추가 분배금 (특정 길드원에게 수동 지급, 원 단위)
@@ -136,6 +137,34 @@ model SettlementExclusion {
 
   @@unique([weekId, memberId])
   @@index([weekId])
+}
+
+/// 출석 등록 세션: 한 번의 출석 등록(주차·소속·시간·카테고리·참석자). 사후 수정용 기록.
+model AttendanceSession {
+  id         Int      @id @default(autoincrement())
+  weekId     Int
+  guildId    Int? // 등록 당시 소속(군)
+  categoryId Int
+  time       String   @default("") // 시간 표기(자유)
+  plays      Int      @default(1) // 참여횟수(각 참석자 반영량)
+  actorName  String   @default("")
+  createdAt  DateTime @default(now())
+
+  week    Week                      @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  members AttendanceSessionMember[]
+
+  @@index([weekId])
+}
+
+model AttendanceSessionMember {
+  id        Int @id @default(autoincrement())
+  sessionId Int
+  memberId  Int
+
+  session AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, memberId])
+  @@index([sessionId])
 }
 
 /// 활동 로그 (관리자 감사용): 누가 무엇을 했는지

@@ -11,6 +11,8 @@ const schema = z.object({
   categoryId: z.number().int().positive(),
   memberIds: z.array(z.number().int().positive()).min(1, "참석자를 선택하세요."),
   delta: z.number().int().default(1), // 보통 +1, 취소 정정 시 -1 가능
+  time: z.string().trim().max(50).optional(),
+  guildId: z.number().int().positive().nullable().optional(),
 });
 
 // 출석 등록: 선택한 참석자의 (주차, 카테고리) 출석 횟수를 delta 만큼 증가
@@ -32,7 +34,7 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
-  const { weekId, categoryId, memberIds, delta } = parsed.data;
+  const { weekId, categoryId, memberIds, delta, time, guildId } = parsed.data;
 
   const week = await prisma.week.findUnique({ where: { id: weekId } });
   if (week?.settled) {
@@ -64,6 +66,21 @@ export async function POST(req: NextRequest) {
     where: { weekId, categoryId, count: { lt: 0 } },
     data: { count: 0 },
   });
+
+  // 등록 세션 기록 (사후 수정용) — delta>0 일 때만 세션으로 남김
+  if (delta > 0) {
+    await prisma.attendanceSession.create({
+      data: {
+        weekId,
+        guildId: guildId ?? null,
+        categoryId,
+        time: time ?? "",
+        plays: delta,
+        actorName: me.name,
+        members: { create: memberIds.map((memberId) => ({ memberId })) },
+      },
+    });
+  }
 
   await logActivity({
     actorId: me.memberId,

@@ -124,6 +124,8 @@ export default function AttendanceNewClient({
           categoryId: Number(categoryId),
           memberIds: [...attendees],
           delta: Number(plays),
+          time: time.trim() || undefined,
+          guildId: guildId ? Number(guildId) : null,
         }),
       });
       const d = await res.json();
