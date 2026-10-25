@@ -262,7 +262,7 @@ export default function AwardsClient({
       guildId: number | null;
       donate: Map<string, number>;
       payout: Map<string, number>;
-      order: number; // 정렬용 합계(기부+지급), 표시는 안 함
+      order: number; // 정렬용 기부 합계(기부 기준 나열), 표시는 안 함
     };
     const map = new Map<number, Row>();
     const ensure = (d: DonationRow) => {
@@ -289,7 +289,6 @@ export default function AwardsClient({
     for (const d of payoutFiltered) {
       const r = ensure(d);
       r.payout.set(d.itemName, (r.payout.get(d.itemName) ?? 0) + d.quantity);
-      r.order += d.quantity;
       gpTotals.set(d.itemName, (gpTotals.get(d.itemName) ?? 0) + d.quantity);
     }
     const orderOf = (totals: Map<string, number>) => {

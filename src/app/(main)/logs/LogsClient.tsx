@@ -18,9 +18,12 @@ export interface MemberOpt {
 
 const ACTION_CLS: Record<string, string> = {
   "길드원 삭제": "bg-red-500/15 text-red-400 ring-red-500/40",
+  "출석 세션 삭제": "bg-red-500/15 text-red-400 ring-red-500/40",
   "비밀번호 초기화": "bg-amber-500/15 text-amber-400 ring-amber-500/40",
   "길드원 등록": "bg-emerald-500/15 text-emerald-400 ring-emerald-500/40",
+  "출석 등록": "bg-emerald-500/15 text-emerald-400 ring-emerald-500/40",
   "아이템 신청": "bg-violet-500/15 text-violet-400 ring-violet-500/40",
+  "출석 세션 수정": "bg-amber-500/15 text-amber-400 ring-amber-500/40",
 };
 const actionCls = (a: string) =>
   ACTION_CLS[a] ?? "bg-sky-500/15 text-sky-400 ring-sky-500/40";
@@ -84,36 +87,46 @@ export default function LogsClient({
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
-        <table className="w-full text-sm">
+      <div className="mb-2 text-xs text-neutral-400">
+        {filtered.length.toLocaleString()}건 표시
+        {actorId !== "all" || q.trim() ? ` · 전체 ${rows.length.toLocaleString()}건 중` : ""}
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border border-neutral-200 bg-white shadow-sm">
+        <table className="w-full min-w-[720px] text-sm">
           <thead>
-            <tr className="border-b border-neutral-200 bg-neutral-50 text-neutral-600">
-              <th className="w-28 px-3 py-2.5 text-left font-semibold">시간</th>
-              <th className="w-28 px-3 py-2.5 text-left font-semibold">수행자</th>
-              <th className="w-28 px-3 py-2.5 text-left font-semibold">동작</th>
-              <th className="px-3 py-2.5 text-left font-semibold">상세</th>
+            <tr className="border-b border-neutral-200 bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+              <th className="w-36 px-4 py-3 text-left font-semibold">시간</th>
+              <th className="w-32 px-4 py-3 text-left font-semibold">수행자</th>
+              <th className="w-44 px-4 py-3 text-left font-semibold">동작</th>
+              <th className="px-4 py-3 text-left font-semibold">상세</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((r) => (
-              <tr key={r.id} className="border-b border-neutral-50">
-                <td className="px-3 py-2 whitespace-nowrap text-neutral-500">
+              <tr
+                key={r.id}
+                className="border-b border-neutral-100 transition-colors last:border-0 hover:bg-neutral-50/70"
+              >
+                <td className="px-4 py-2.5 whitespace-nowrap tabular-nums text-neutral-500">
                   {fmt(r.createdAt)}
                 </td>
-                <td className="px-3 py-2 font-medium text-neutral-800">{r.actorName}</td>
-                <td className="px-3 py-2">
+                <td className="px-4 py-2.5 font-medium text-neutral-800">{r.actorName}</td>
+                <td className="px-4 py-2.5">
                   <span
-                    className={`rounded px-1.5 py-0.5 text-[11px] font-bold ring-1 ${actionCls(r.action)}`}
+                    className={`inline-block whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold ring-1 ${actionCls(r.action)}`}
                   >
                     {r.action}
                   </span>
                 </td>
-                <td className="px-3 py-2 text-neutral-600">{r.detail}</td>
+                <td className="px-4 py-2.5 leading-relaxed text-neutral-600">
+                  {r.detail || <span className="text-neutral-300">—</span>}
+                </td>
               </tr>
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={4} className="py-8 text-center text-neutral-400">
+                <td colSpan={4} className="py-10 text-center text-neutral-400">
                   로그가 없습니다.
                 </td>
               </tr>
