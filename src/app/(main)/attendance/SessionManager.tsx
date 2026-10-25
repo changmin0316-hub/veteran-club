@@ -27,10 +27,12 @@ interface Session {
 export default function SessionManager({
   weekId,
   settled,
+  canEdit,
   onChanged,
 }: {
   weekId: number | null;
   settled: boolean;
+  canEdit: boolean;
   onChanged: () => void;
 }) {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -143,7 +145,9 @@ export default function SessionManager({
         {msg && <span className="text-xs text-sky-600">{msg}</span>}
       </div>
       <p className="mb-2 text-xs text-neutral-400">
-        각 출석 등록 건을 개별로 확인·수정할 수 있습니다. 참석자를 바꾸거나 삭제하면 위의 누적 출석현황에 자동 반영됩니다.
+        {canEdit
+          ? "각 출석 등록 건을 개별로 확인·수정할 수 있습니다. 참석자를 바꾸거나 삭제하면 위의 누적 출석현황에 자동 반영됩니다."
+          : "출석이 등록된 내역을 확인할 수 있습니다. (수정은 운영진만 가능)"}
       </p>
 
       {loading && <p className="py-4 text-center text-sm text-neutral-400">불러오는 중...</p>}
@@ -238,7 +242,7 @@ export default function SessionManager({
                     <span className="text-xs text-neutral-400">참석자 없음</span>
                   )}
                 </div>
-                {!settled && (
+                {canEdit && !settled && (
                   <div className="flex shrink-0 gap-1">
                     <button
                       onClick={() => startEdit(s)}

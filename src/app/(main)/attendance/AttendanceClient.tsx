@@ -258,9 +258,12 @@ export default function AttendanceClient({
           : "출석율은 최고 출석자 대비 비율입니다. 파란 '나' 표시가 본인 행입니다."}
       </p>
 
-      {isManager && (
-        <SessionManager weekId={weekId} settled={settled} onChanged={reload} />
-      )}
+      <SessionManager
+        weekId={weekId}
+        settled={settled}
+        canEdit={isManager}
+        onChanged={reload}
+      />
     </section>
   );
 }

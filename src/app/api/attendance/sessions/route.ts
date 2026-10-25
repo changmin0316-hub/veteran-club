@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireManager, AuthError } from "@/lib/guard";
+import { requireUser, AuthError } from "@/lib/guard";
 
 export const dynamic = "force-dynamic";
 
-// 특정 주차의 출석 등록 세션 목록 (최신순)
+// 특정 주차의 출석 등록 세션 목록 (최신순) — 조회는 로그인한 길드원 전체
 export async function GET(req: NextRequest) {
   try {
-    await requireManager();
+    await requireUser();
   } catch (e) {
     if (e instanceof AuthError)
       return NextResponse.json({ message: e.message }, { status: e.status });
