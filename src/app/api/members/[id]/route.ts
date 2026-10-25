@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireManager, requireAdmin, AuthError } from "@/lib/guard";
-import { logActivity } from "@/lib/log";
+import { logActivity, memberDiff } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 
@@ -113,11 +113,17 @@ export async function PATCH(
     include: { guild: true },
   });
 
+  const changes = {
+    ...rest,
+    ...nameUpdate,
+    ...(bossKills !== undefined ? { bossKills: JSON.stringify(bossKills) } : {}),
+  };
+  const diff = memberDiff(target as unknown as Record<string, unknown>, changes);
   await logActivity({
     actorId: me.memberId,
     actorName: me.name,
     action: "길드원 정보 수정",
-    detail: `${target.name} 정보 변경`,
+    detail: `${target.name}: ${diff || "변경 없음"}`,
     targetMemberId: memberId,
   });
 
