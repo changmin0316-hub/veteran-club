@@ -4,12 +4,12 @@ import EventClient, {
   type WeekOpt,
   type GuildOpt,
 } from "./EventClient";
-import { requireManagerPage } from "@/lib/page-guard";
+import { requireAdminPage } from "@/lib/page-guard";
 
 export const dynamic = "force-dynamic";
 
 export default async function EventPage() {
-  await requireManagerPage();
+  await requireAdminPage();
   const [events, weeks, guilds] = await Promise.all([
     prisma.event.findMany({
       orderBy: { createdAt: "desc" },

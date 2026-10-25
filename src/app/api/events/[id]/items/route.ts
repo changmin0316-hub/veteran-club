@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { requireManager, AuthError } from "@/lib/guard";
+import { requireAdmin, AuthError } from "@/lib/guard";
 import { logActivity } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +18,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireManager();
+    await requireAdmin();
   } catch (e) {
     return handleAuth(e);
   }
@@ -40,7 +40,7 @@ export async function POST(
 ) {
   let me;
   try {
-    me = await requireManager();
+    me = await requireAdmin();
   } catch (e) {
     return handleAuth(e);
   }
@@ -72,7 +72,7 @@ export async function DELETE(
 ) {
   let me;
   try {
-    me = await requireManager();
+    me = await requireAdmin();
   } catch (e) {
     return handleAuth(e);
   }

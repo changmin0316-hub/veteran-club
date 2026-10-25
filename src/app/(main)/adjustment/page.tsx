@@ -1,12 +1,12 @@
 import { prisma } from "@/lib/db";
 import AdjustmentClient from "./AdjustmentClient";
 import type { WeekOpt, GuildOpt } from "../settlement-types";
-import { requireManagerPage } from "@/lib/page-guard";
+import { requireAdminPage } from "@/lib/page-guard";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdjustmentPage() {
-  await requireManagerPage();
+  await requireAdminPage();
   const [weeks, guilds] = await Promise.all([
     prisma.week.findMany({ orderBy: { number: "desc" } }),
     prisma.guild.findMany({ orderBy: { order: "asc" } }),

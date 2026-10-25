@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { requireManager, AuthError } from "@/lib/guard";
+import { requireAdmin, AuthError } from "@/lib/guard";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +13,7 @@ function handleAuth(e: unknown) {
 
 export async function GET() {
   try {
-    await requireManager();
+    await requireAdmin();
   } catch (e) {
     return handleAuth(e);
   }
@@ -33,7 +33,7 @@ const createSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    await requireManager();
+    await requireAdmin();
   } catch (e) {
     return handleAuth(e);
   }

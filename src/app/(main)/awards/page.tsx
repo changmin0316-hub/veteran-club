@@ -14,7 +14,8 @@ export const dynamic = "force-dynamic";
 
 export default async function AwardsPage() {
   const me = await requireUserPage();
-  const isManager = me.role === "ADMIN" || me.role === "COMMANDER";
+  // 낙찰 통계 수정(기부/지급 등록·삭제)은 관리자(ADMIN)만 가능
+  const isManager = me.role === "ADMIN";
 
   const [awarded, guilds, weeks, donations, payouts, members] = await Promise.all([
     prisma.eventItem.findMany({

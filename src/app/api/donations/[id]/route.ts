@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireManager, AuthError } from "@/lib/guard";
+import { requireAdmin, AuthError } from "@/lib/guard";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +15,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireManager();
+    await requireAdmin();
   } catch (e) {
     return handleAuth(e);
   }
