@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { hashPassword, verifyPassword } from "@/lib/auth";
 import { requireUser, AuthError } from "@/lib/guard";
+import { logActivity } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 
@@ -124,5 +125,12 @@ export async function PATCH(req: NextRequest) {
   }
 
   await prisma.member.update({ where: { id: me.memberId }, data });
+  await logActivity({
+    actorId: me.memberId,
+    actorName: me.name,
+    action: "내 정보 수정",
+    detail: d.newPassword ? "정보+비밀번호 변경" : "내 정보 변경",
+    targetMemberId: me.memberId,
+  });
   return NextResponse.json({ message: "ok" });
 }

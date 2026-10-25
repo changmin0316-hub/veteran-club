@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireManager, requireAdmin, AuthError } from "@/lib/guard";
+import { logActivity } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 
@@ -112,6 +113,14 @@ export async function PATCH(
     include: { guild: true },
   });
 
+  await logActivity({
+    actorId: me.memberId,
+    actorName: me.name,
+    action: "길드원 정보 수정",
+    detail: `${target.name} 정보 변경`,
+    targetMemberId: memberId,
+  });
+
   return NextResponse.json({ member });
 }
 
@@ -143,5 +152,11 @@ export async function DELETE(
   }
 
   await prisma.member.delete({ where: { id: memberId } });
+  await logActivity({
+    actorId: me.memberId,
+    actorName: me.name,
+    action: "길드원 삭제",
+    detail: `${target.name} 삭제`,
+  });
   return NextResponse.json({ message: "ok" });
 }

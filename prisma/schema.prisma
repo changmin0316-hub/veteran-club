@@ -138,6 +138,20 @@ model SettlementExclusion {
   @@index([weekId])
 }
 
+/// 활동 로그 (관리자 감사용): 누가 무엇을 했는지
+model ActivityLog {
+  id             Int      @id @default(autoincrement())
+  actorId        Int? // 수행한 길드원 id
+  actorName      String // 수행자 캐릭명(스냅샷)
+  action         String // 동작 종류 (예: 정보수정, 삭제, 신청)
+  detail         String   @default("") // 상세 설명
+  targetMemberId Int? // 대상 길드원 id(있으면)
+  createdAt      DateTime @default(now())
+
+  @@index([actorId])
+  @@index([createdAt])
+}
+
 /// 매칭표용 서버/길드 정보 (운영진 수기 입력)
 model MatchGuild {
   id        Int      @id @default(autoincrement())

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireUser, AuthError } from "@/lib/guard";
+import { logActivity } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 
@@ -123,6 +124,16 @@ export async function POST(req: NextRequest) {
       })
     ),
   ]);
+
+  if (toAdd.length || toRemove.length) {
+    await logActivity({
+      actorId: me.memberId,
+      actorName: me.name,
+      action: "아이템 신청",
+      detail: `${event.name} · 신청 ${toAdd.length} / 취소 ${toRemove.length}`,
+      targetMemberId: me.memberId,
+    });
+  }
 
   return NextResponse.json({
     message: "ok",

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import { requireManager, requireAdmin, AuthError } from "@/lib/guard";
+import { logActivity } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 
@@ -85,6 +86,14 @@ export async function POST(req: NextRequest) {
       accuracy: data.accuracy,
     },
     include: { guild: true },
+  });
+
+  await logActivity({
+    actorId: me.memberId,
+    actorName: me.name,
+    action: "길드원 등록",
+    detail: `${member.name} 등록`,
+    targetMemberId: member.id,
   });
 
   return NextResponse.json({ member }, { status: 201 });

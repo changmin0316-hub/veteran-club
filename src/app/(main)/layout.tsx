@@ -13,6 +13,7 @@ export default async function MainLayout({
   if (!user) redirect("/login");
 
   const isManager = user.role === "ADMIN" || user.role === "COMMANDER";
+  const isAdmin = user.role === "ADMIN";
 
   return (
     <div className="mx-auto max-w-[88rem] px-4">
@@ -20,7 +21,7 @@ export default async function MainLayout({
       <StickyHeader>
         <TopBar name={user.name} role={user.role} />
         <div className="mt-3">
-          <NavTabs isManager={isManager} />
+          <NavTabs isManager={isManager} isAdmin={isAdmin} />
         </div>
       </StickyHeader>
       <div className="mt-6 pb-10">{children}</div>

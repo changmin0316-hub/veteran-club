@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import { requireManager, AuthError } from "@/lib/guard";
+import { logActivity } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,13 @@ export async function POST(req: NextRequest) {
   await prisma.member.updateMany({
     where: { id: { in: targets.map((t) => t.id) } },
     data: { passwordHash: hash },
+  });
+
+  await logActivity({
+    actorId: me.memberId,
+    actorName: me.name,
+    action: "비밀번호 초기화",
+    detail: targets.map((t) => t.name).join(", "),
   });
 
   return NextResponse.json({
