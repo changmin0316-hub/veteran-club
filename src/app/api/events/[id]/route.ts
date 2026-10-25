@@ -15,6 +15,7 @@ const updateSchema = z.object({
   name: z.string().trim().min(1).max(100).optional(),
   active: z.boolean().optional(),
   weekId: z.number().int().positive().nullable().optional(),
+  guildId: z.number().int().positive().nullable().optional(),
 });
 
 export async function PATCH(

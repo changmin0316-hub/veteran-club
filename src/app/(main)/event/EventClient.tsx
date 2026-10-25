@@ -181,6 +181,24 @@ export default function EventClient({
     }
   }
 
+  async function changeGuild(row: EventRow, gId: number | null) {
+    const prev = { guildId: row.guildId };
+    setRows((rs) =>
+      rs.map((r) => (r.id === row.id ? { ...r, guildId: gId } : r))
+    );
+    const res = await fetch(`/api/events/${row.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ guildId: gId }),
+    });
+    if (!res.ok) {
+      setRows((rs) => rs.map((r) => (r.id === row.id ? { ...r, ...prev } : r)));
+      flash("군 변경 실패");
+    } else {
+      flash(gId ? `${guildLabel(gId)} 전용으로 변경` : "전체 공용으로 변경");
+    }
+  }
+
   async function removeEvent(row: EventRow) {
     if (!confirm(`'${row.name}' 이벤트를 삭제할까요? 등록된 아이템/신청도 함께 삭제됩니다.`))
       return;
@@ -299,16 +317,26 @@ export default function EventClient({
               ))}
             </select>
 
-            <span
+            <select
+              value={row.guildId ?? ""}
+              onChange={(e) =>
+                changeGuild(row, e.target.value ? Number(e.target.value) : null)
+              }
+              title="대상 군 (전체 공용 = 모든 군 신청 가능)"
               className={[
-                "shrink-0 rounded px-2 py-1 text-xs font-medium",
+                "shrink-0 rounded border px-2 py-1.5 text-xs font-medium focus:outline-none",
                 row.guildId
-                  ? "bg-sky-100 text-sky-700"
-                  : "bg-neutral-100 text-neutral-500",
+                  ? "border-sky-200 bg-sky-100 text-sky-700"
+                  : "border-neutral-200 bg-neutral-50 text-neutral-500",
               ].join(" ")}
             >
-              {row.guildId ? guildLabel(row.guildId) + " 전용" : "전체 공용"}
-            </span>
+              <option value="">전체 공용</option>
+              {guilds.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.order}군 전용
+                </option>
+              ))}
+            </select>
 
             <span
               className={[
