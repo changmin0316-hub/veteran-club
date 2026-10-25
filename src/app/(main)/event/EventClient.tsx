@@ -34,6 +34,8 @@ export interface EventRow {
   active: boolean;
   weekId: number | null;
   weekName: string | null;
+  guildId: number | null;
+  guildName: string | null;
   itemCount: number;
   createdAt: string;
 }
@@ -41,17 +43,29 @@ export interface WeekOpt {
   id: number;
   label: string;
 }
+export interface GuildOpt {
+  id: number;
+  order: number;
+  name: string;
+}
 
 export default function EventClient({
   initialRows,
   weeks,
+  guilds,
 }: {
   initialRows: EventRow[];
   weeks: WeekOpt[];
+  guilds: GuildOpt[];
 }) {
   const [rows, setRows] = useState<EventRow[]>(initialRows);
   const [name, setName] = useState("");
   const [weekId, setWeekId] = useState<string>("");
+  const [guildId, setGuildId] = useState<string>("");
+  const guildLabel = (id: number | null) => {
+    const g = guilds.find((x) => x.id === id);
+    return g ? `${g.order}군` : "전체";
+  };
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [editing, setEditing] = useState<EventRow | null>(null);
@@ -71,6 +85,7 @@ export default function EventClient({
         body: JSON.stringify({
           name: name.trim(),
           weekId: weekId ? Number(weekId) : null,
+          guildId: guildId ? Number(guildId) : null,
         }),
       });
       const d = await res.json();
@@ -83,6 +98,8 @@ export default function EventClient({
           active: e.active,
           weekId: e.weekId,
           weekName: e.week?.name ?? (e.week ? `${e.week.number}주차` : null),
+          guildId: e.guildId,
+          guildName: e.guild?.name ?? null,
           itemCount: e._count.items,
           createdAt: e.createdAt,
         },
@@ -187,9 +204,22 @@ export default function EventClient({
       <div className="rounded-lg border border-neutral-200 bg-white p-3">
         <div className="flex flex-col gap-2 sm:flex-row">
           <select
+            value={guildId}
+            onChange={(e) => setGuildId(e.target.value)}
+            className="rounded border border-neutral-300 px-3 py-2 text-sm sm:w-32"
+            title="대상 군 (전체 = 모든 군 신청 가능)"
+          >
+            <option value="">전체 공용</option>
+            {guilds.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.order}군 전용
+              </option>
+            ))}
+          </select>
+          <select
             value={weekId}
             onChange={(e) => setWeekId(e.target.value)}
-            className="rounded border border-neutral-300 px-3 py-2 text-sm sm:w-56"
+            className="rounded border border-neutral-300 px-3 py-2 text-sm sm:w-48"
           >
             <option value="">출석 연동 안 함</option>
             {weeks.map((w) => (
@@ -268,6 +298,17 @@ export default function EventClient({
                 </option>
               ))}
             </select>
+
+            <span
+              className={[
+                "shrink-0 rounded px-2 py-1 text-xs font-medium",
+                row.guildId
+                  ? "bg-sky-100 text-sky-700"
+                  : "bg-neutral-100 text-neutral-500",
+              ].join(" ")}
+            >
+              {row.guildId ? guildLabel(row.guildId) + " 전용" : "전체 공용"}
+            </span>
 
             <span
               className={[

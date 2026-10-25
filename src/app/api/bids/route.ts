@@ -70,6 +70,20 @@ export async function POST(req: NextRequest) {
   const validIds = new Set(valid.map((v) => v.id));
   const targetIds = eventItemIds.filter((id) => validIds.has(id));
 
+  // 군 전용 이벤트: 해당 군 길드원만 신규 신청 가능 (취소/비우기는 허용)
+  if (event.guildId && targetIds.length > 0) {
+    const m = await prisma.member.findUnique({
+      where: { id: me.memberId },
+      select: { guildId: true },
+    });
+    if (m?.guildId !== event.guildId) {
+      return NextResponse.json(
+        { message: "해당 군 소속 길드원만 신청할 수 있는 이벤트입니다." },
+        { status: 403 }
+      );
+    }
+  }
+
   // 출석 연동 이벤트: 해당 주차에 출석(1회 이상)한 길드원만 신규 입찰 가능.
   // (신청 취소/비우기는 자격과 무관하게 허용)
   if (event.weekId && targetIds.length > 0) {

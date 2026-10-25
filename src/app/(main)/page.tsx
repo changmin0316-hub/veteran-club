@@ -6,10 +6,20 @@ export const dynamic = "force-dynamic";
 
 export default async function ItemRequestPage() {
   const me = await getCurrentUser();
+  const myMember = me
+    ? await prisma.member.findUnique({
+        where: { id: me.memberId },
+        select: { guildId: true },
+      })
+    : null;
+  const myGuildId = myMember?.guildId ?? null;
 
-  // 진행중(active) 이벤트 전체 — 드롭다운용
+  // 진행중(active) 이벤트 — 본인 군(또는 전체 공용)만
   const activeEvents = await prisma.event.findMany({
-    where: { active: true },
+    where: {
+      active: true,
+      OR: [{ guildId: null }, ...(myGuildId ? [{ guildId: myGuildId }] : [])],
+    },
     orderBy: { createdAt: "desc" },
     select: { id: true, name: true },
   });

@@ -19,7 +19,7 @@ export async function GET() {
   }
   const events = await prisma.event.findMany({
     orderBy: { createdAt: "desc" },
-    include: { _count: { select: { items: true } }, week: true },
+    include: { _count: { select: { items: true } }, week: true, guild: true },
   });
   return NextResponse.json({ events });
 }
@@ -27,6 +27,7 @@ export async function GET() {
 const createSchema = z.object({
   name: z.string().trim().min(1, "이벤트 이름을 입력하세요.").max(100),
   weekId: z.number().int().positive().nullable().optional(),
+  guildId: z.number().int().positive().nullable().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -47,9 +48,10 @@ export async function POST(req: NextRequest) {
     data: {
       name: parsed.data.name,
       weekId: parsed.data.weekId ?? null,
+      guildId: parsed.data.guildId ?? null,
       active: true,
     },
-    include: { _count: { select: { items: true } }, week: true },
+    include: { _count: { select: { items: true } }, week: true, guild: true },
   });
   return NextResponse.json({ event }, { status: 201 });
 }

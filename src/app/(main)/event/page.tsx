@@ -1,17 +1,22 @@
 import { prisma } from "@/lib/db";
-import EventClient, { type EventRow, type WeekOpt } from "./EventClient";
+import EventClient, {
+  type EventRow,
+  type WeekOpt,
+  type GuildOpt,
+} from "./EventClient";
 import { requireManagerPage } from "@/lib/page-guard";
 
 export const dynamic = "force-dynamic";
 
 export default async function EventPage() {
   await requireManagerPage();
-  const [events, weeks] = await Promise.all([
+  const [events, weeks, guilds] = await Promise.all([
     prisma.event.findMany({
       orderBy: { createdAt: "desc" },
-      include: { _count: { select: { items: true } }, week: true },
+      include: { _count: { select: { items: true } }, week: true, guild: true },
     }),
     prisma.week.findMany({ orderBy: { number: "desc" } }),
+    prisma.guild.findMany({ orderBy: { order: "asc" } }),
   ]);
 
   const rows: EventRow[] = events.map((e) => ({
@@ -20,6 +25,8 @@ export default async function EventPage() {
     active: e.active,
     weekId: e.weekId,
     weekName: e.week?.name ?? (e.week ? `${e.week.number}주차` : null),
+    guildId: e.guildId,
+    guildName: e.guild?.name ?? null,
     itemCount: e._count.items,
     createdAt: e.createdAt.toISOString(),
   }));
@@ -29,5 +36,11 @@ export default async function EventPage() {
     label: w.name ?? `${w.number}주차`,
   }));
 
-  return <EventClient initialRows={rows} weeks={weekOpts} />;
+  const guildOpts: GuildOpt[] = guilds.map((g) => ({
+    id: g.id,
+    order: g.order,
+    name: g.name,
+  }));
+
+  return <EventClient initialRows={rows} weeks={weekOpts} guilds={guildOpts} />;
 }

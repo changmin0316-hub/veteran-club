@@ -21,6 +21,7 @@ model Guild {
   createdAt DateTime @default(now())
 
   members Member[]
+  events  Event[]
 }
 
 /// 길드원(캐릭터). 로그인 아이디 = 캐릭터명(name).
@@ -222,12 +223,15 @@ model Event {
   name      String
   active    Boolean  @default(true)
   weekId    Int?
+  guildId   Int? // 대상 군(1군/2군/…). null = 전체 공용
   createdAt DateTime @default(now())
 
   week  Week?       @relation(fields: [weekId], references: [id])
+  guild Guild?      @relation(fields: [guildId], references: [id])
   items EventItem[]
 
   @@index([weekId])
+  @@index([guildId])
 }
 
 /// 아이템 마스터 (825개). rarity = 등급(일반 등), category = 무기/방어구/장신구
