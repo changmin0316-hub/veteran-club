@@ -49,15 +49,7 @@ export async function POST(
   if (!parsed.success) {
     return NextResponse.json({ message: "아이템을 선택하세요." }, { status: 400 });
   }
-  const dup = await prisma.eventItem.findFirst({
-    where: { eventId, itemId: parsed.data.itemId },
-  });
-  if (dup) {
-    return NextResponse.json(
-      { message: "이미 등록된 아이템입니다." },
-      { status: 409 }
-    );
-  }
+  // 같은 아이템을 여러 개 중복 등록 허용 (중복 체크 없음)
   const eventItem = await prisma.eventItem.create({
     data: { eventId, itemId: parsed.data.itemId },
     include: { item: true, _count: { select: { bids: true } } },

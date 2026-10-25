@@ -361,7 +361,9 @@ function ItemRegisterModal({
     })();
   }, [event.id]);
 
-  const addedItemIds = new Set(items.map((i) => i.item.id));
+  const addedCount = new Map<number, number>();
+  for (const i of items)
+    addedCount.set(i.item.id, (addedCount.get(i.item.id) ?? 0) + 1);
 
   // 초성 포함 검색 (클라이언트 필터)
   const results = useMemo(() => {
@@ -453,21 +455,26 @@ function ItemRegisterModal({
           />
           {q.trim() && (
             <div className="mt-2 max-h-40 overflow-y-auto rounded border border-neutral-100">
-              {results
-                .filter((r) => !addedItemIds.has(r.id))
-                .map((r) => (
-                  <button
-                    key={r.id}
-                    onClick={() => addItem(r.id)}
-                    disabled={busy}
-                    className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-sky-50"
-                  >
-                    <span>{r.name}</span>
-                    <span className="text-xs text-neutral-400">
-                      {r.rarity} · {r.category}
-                    </span>
-                  </button>
-                ))}
+              {results.map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => addItem(r.id)}
+                  disabled={busy}
+                  className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-sky-50"
+                >
+                  <span className="flex items-center gap-1.5">
+                    {r.name}
+                    {addedCount.get(r.id) ? (
+                      <span className="rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-medium text-sky-700">
+                        등록 {addedCount.get(r.id)}
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="text-xs text-neutral-400">
+                    {r.rarity} · {r.category}
+                  </span>
+                </button>
+              ))}
               {!exactExists && (
                 <button
                   onClick={createAndAdd}
