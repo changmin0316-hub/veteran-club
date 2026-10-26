@@ -26,6 +26,7 @@ interface ResultItem {
   eventItemId: number;
   itemName: string;
   rarity: string;
+  basePrice: number;
   winnerId: number | null;
   bidders: Bidder[];
 }
@@ -186,6 +187,11 @@ export default function RequestClient({
                     <span className="rounded bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500">
                       {it.rarity}
                     </span>
+                    {it.basePrice > 0 && (
+                      <span className="rounded bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 tabular-nums">
+                        💎 {it.basePrice.toLocaleString()}
+                      </span>
+                    )}
                     <span className="text-xs text-neutral-400">
                       신청 {it.bidders.length}명
                     </span>

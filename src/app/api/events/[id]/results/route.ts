@@ -72,6 +72,7 @@ export async function GET(
       eventItemId: ei.id,
       itemName: ei.item.name,
       rarity: ei.item.rarity,
+      basePrice: ei.item.basePrice,
       winnerId: ei.winnerId,
       bidders: ei.bids.map((b) => ({
         memberId: b.member.id,
