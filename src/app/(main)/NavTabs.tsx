@@ -13,7 +13,7 @@ const TABS = [
   { href: "/adjustment", label: "분배금 정산", managerOnly: true, adminOnly: true },
   { href: "/awards", label: "낙찰 통계", managerOnly: false, adminOnly: false },
   { href: "/users", label: "길드원", managerOnly: false, adminOnly: false },
-  { href: "/matching", label: "매칭표(준비중)", managerOnly: false, adminOnly: false },
+  { href: "/matching", label: "매칭표", managerOnly: false, adminOnly: false },
   { href: "/logs", label: "활동 로그", managerOnly: true, adminOnly: true },
 ];
 
