@@ -135,10 +135,15 @@ export default function UsersClient({
   const isAdmin = myRole === "ADMIN";
   const isManager = myRole === "ADMIN" || myRole === "COMMANDER";
 
-  // 현재 입력값(행) vs 전월 말일 기준선 → 실시간 증감 계산
-  function rowDelta(r: MemberRow): StatDelta | null {
-    const b = baseline[r.id];
-    if (!b) return null;
+  // 현재 입력값(행) vs 전월 말일 기준선 → 실시간 증감 계산.
+  // 기준선이 없으면(이번 달 스냅샷 미생성) 현재값을 기준선으로 보아 ±0 처리.
+  function rowDelta(r: MemberRow): StatDelta {
+    const b = baseline[r.id] ?? {
+      attack: r.attack,
+      defense: r.defense,
+      accuracy: r.accuracy,
+      itemCollection: r.itemCollection,
+    };
     return {
       attack: r.attack - b.attack,
       defense: r.defense - b.defense,
