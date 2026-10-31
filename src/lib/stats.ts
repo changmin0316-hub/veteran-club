@@ -1,8 +1,11 @@
 import { prisma } from "@/lib/db";
 
+// 월 구분은 항상 KST(Asia/Seoul) 기준. 서버가 UTC(예: Vercel)여도
+// 한국 시간 1일 0시부터 새 달로 취급해 전월 말일 기준선과 비교한다.
 export function ymOf(date = new Date()): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const kst = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+  const y = kst.getUTCFullYear();
+  const m = String(kst.getUTCMonth() + 1).padStart(2, "0");
   return `${y}-${m}`;
 }
 
