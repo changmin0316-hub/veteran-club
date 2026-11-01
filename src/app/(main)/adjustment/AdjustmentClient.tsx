@@ -62,16 +62,18 @@ export default function AdjustmentClient({
 
   async function saveDiamond() {
     if (!weekId) return;
+    if (!guildId) return flash("군(소속)을 선택하세요.");
     setBusy(true);
     try {
-      const res = await fetch(`/api/weeks/${weekId}`, {
-        method: "PATCH",
+      const res = await fetch(`/api/weeks/${weekId}/diamond`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ diamond }),
+        body: JSON.stringify({ guildId, diamond }),
       });
       if (!res.ok) throw new Error((await res.json()).message ?? "입력 실패");
       await reload();
-      flash("길드 정산금(다이아)이 반영되었습니다.");
+      const gname = guilds.find((g) => g.id === guildId);
+      flash(`${gname ? `${gname.order}군 ` : ""}길드 정산금(다이아)이 반영되었습니다.`);
     } catch (e) {
       flash(e instanceof Error ? e.message : "오류");
     } finally {
@@ -152,7 +154,8 @@ export default function AdjustmentClient({
       </div>
 
       <p className="mb-3 rounded-lg bg-neutral-100 px-4 py-3 text-sm text-neutral-500">
-        길드 정산금(다이아)을 입력하면 출석 점수·힐비 비율을 반영해 분배금이 계산됩니다.
+        길드 정산금(다이아)은 <b>군(1군/2군/3군)별로 개별 입력</b>합니다. 군을 선택한 뒤
+        입력하면 그 군의 출석 점수·힐비 비율을 반영해 분배금이 계산됩니다.
       </p>
 
       <div className="mb-3">
@@ -169,9 +172,14 @@ export default function AdjustmentClient({
         {/* 길드 정산금 입력 + 요약 */}
         <div className="lg:col-span-2">
           <div className="rounded-lg border border-neutral-200 bg-white p-4">
-            <h3 className="mb-3 text-sm font-bold">길드 정산금</h3>
+            <h3 className="mb-3 text-sm font-bold">
+              {(() => {
+                const g = guilds.find((x) => x.id === guildId);
+                return g ? `${g.order}군 길드 정산금` : "길드 정산금";
+              })()}
+            </h3>
             <label className="grid gap-1 text-xs text-neutral-500">
-              <span>다이아 입력</span>
+              <span>다이아 입력 (선택한 군 기준)</span>
               <div className="flex gap-2">
                 <input
                   type="number"

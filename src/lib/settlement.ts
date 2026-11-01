@@ -52,8 +52,9 @@ export async function computeSettlement(
         : Promise.resolve(null),
     ]);
 
-  // 군별 제외 비율이 있으면 우선, 없으면 주차 전체값(Week.excludeRatio)로 폴백
+  // 군별 설정이 있으면 우선, 없으면 주차 전체값으로 폴백
   const excludeRatio = guildExclude?.ratio ?? week.excludeRatio;
+  const guildDiamond = guildExclude?.diamond ?? week.diamond;
 
   const weightById = new Map(categories.map((c) => [c.id, c.weight]));
   const excludedSet = new Set(exclusions.map((e) => e.memberId));
@@ -89,7 +90,7 @@ export async function computeSettlement(
     .filter((b) => !b.excluded)
     .reduce((s, b) => s + b.score, 0);
 
-  const pool = week.diamond;
+  const pool = guildDiamond;
   const excludeAmount = Math.floor((pool * excludeRatio) / 100);
   const distributable = pool - excludeAmount;
 
@@ -120,7 +121,7 @@ export async function computeSettlement(
       number: week.number,
       name: week.name,
       excludeRatio, // 선택한 군의 적용 비율(군별 값 또는 폴백)
-      diamond: week.diamond,
+      diamond: guildDiamond, // 선택한 군의 정산금(군별 값 또는 폴백)
       settled: week.settled,
     },
     categories: categories.map((c) => ({

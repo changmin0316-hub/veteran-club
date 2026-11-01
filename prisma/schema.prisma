@@ -113,12 +113,14 @@ model Week {
   guildExcludes WeekGuildExclude[]
 }
 
-/// 주차 x 군별 제외 분배금 비율(%). 군마다 개별 적용. 없으면 Week.excludeRatio 로 폴백.
+/// 주차 x 군별 정산 설정(제외 비율·정산금). 군마다 개별 적용.
+/// 없으면 Week.excludeRatio / Week.diamond 로 폴백.
 model WeekGuildExclude {
   id      Int @id @default(autoincrement())
   weekId  Int
   guildId Int
   ratio   Int @default(0) // 제외 분배금(힐비) 비율 %
+  diamond Int @default(0) // 길드 정산금(다이아) - 분배 재원
 
   week Week @relation(fields: [weekId], references: [id], onDelete: Cascade)
 
