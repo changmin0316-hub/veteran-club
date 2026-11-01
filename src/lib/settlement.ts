@@ -34,7 +34,7 @@ export async function computeSettlement(
   const week = await prisma.week.findUnique({ where: { id: weekId } });
   if (!week) return null;
 
-  const [categories, members, records, exclusions, extraPays, paidMarks] =
+  const [categories, members, records, exclusions, extraPays, paidMarks, guildExclude] =
     await Promise.all([
       prisma.attendanceCategory.findMany({ orderBy: { sortOrder: "asc" } }),
       prisma.member.findMany({
@@ -45,7 +45,15 @@ export async function computeSettlement(
       prisma.settlementExclusion.findMany({ where: { weekId } }),
       prisma.extraPay.findMany({ where: { weekId } }),
       prisma.settlementPaid.findMany({ where: { weekId } }),
+      guildId
+        ? prisma.weekGuildExclude.findUnique({
+            where: { weekId_guildId: { weekId, guildId } },
+          })
+        : Promise.resolve(null),
     ]);
+
+  // 군별 제외 비율이 있으면 우선, 없으면 주차 전체값(Week.excludeRatio)로 폴백
+  const excludeRatio = guildExclude?.ratio ?? week.excludeRatio;
 
   const weightById = new Map(categories.map((c) => [c.id, c.weight]));
   const excludedSet = new Set(exclusions.map((e) => e.memberId));
@@ -82,7 +90,7 @@ export async function computeSettlement(
     .reduce((s, b) => s + b.score, 0);
 
   const pool = week.diamond;
-  const excludeAmount = Math.floor((pool * week.excludeRatio) / 100);
+  const excludeAmount = Math.floor((pool * excludeRatio) / 100);
   const distributable = pool - excludeAmount;
 
   const rows: SettlementRow[] = base.map((b) => {
@@ -111,7 +119,7 @@ export async function computeSettlement(
       id: week.id,
       number: week.number,
       name: week.name,
-      excludeRatio: week.excludeRatio,
+      excludeRatio, // 선택한 군의 적용 비율(군별 값 또는 폴백)
       diamond: week.diamond,
       settled: week.settled,
     },

@@ -110,6 +110,20 @@ model Week {
   extraPays   ExtraPay[]
   paidMarks   SettlementPaid[]
   attendanceSessions AttendanceSession[]
+  guildExcludes WeekGuildExclude[]
+}
+
+/// 주차 x 군별 제외 분배금 비율(%). 군마다 개별 적용. 없으면 Week.excludeRatio 로 폴백.
+model WeekGuildExclude {
+  id      Int @id @default(autoincrement())
+  weekId  Int
+  guildId Int
+  ratio   Int @default(0) // 제외 분배금(힐비) 비율 %
+
+  week Week @relation(fields: [weekId], references: [id], onDelete: Cascade)
+
+  @@unique([weekId, guildId])
+  @@index([weekId])
 }
 
 /// 주차별 추가 분배금 (특정 길드원에게 수동 지급, 원 단위)

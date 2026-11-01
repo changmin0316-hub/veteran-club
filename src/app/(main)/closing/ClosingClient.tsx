@@ -66,16 +66,18 @@ export default function ClosingClient({
 
   async function saveRatio() {
     if (!weekId) return;
+    if (!guildId) return flash("군(소속)을 선택하세요.");
     setBusy(true);
     try {
-      const res = await fetch(`/api/weeks/${weekId}`, {
-        method: "PATCH",
+      const res = await fetch(`/api/weeks/${weekId}/exclude-ratio`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ excludeRatio: ratio }),
+        body: JSON.stringify({ guildId, ratio }),
       });
       if (!res.ok) throw new Error((await res.json()).message ?? "변경 실패");
       await reload();
-      flash("힐비 비율이 변경되었습니다.");
+      const gname = guilds.find((g) => g.id === guildId);
+      flash(`${gname ? `${gname.order}군 ` : ""}제외 분배금 비율이 변경되었습니다.`);
     } catch (e) {
       flash(e instanceof Error ? e.message : "오류");
     } finally {
@@ -119,18 +121,23 @@ export default function ClosingClient({
       </div>
 
       <p className="mb-3 rounded-lg bg-neutral-100 px-4 py-3 text-sm text-neutral-500">
-        누적 금액에서 제외금(힐비) 비율을 조정할 수 있습니다. 시즌별 분배 제외 대상을
-        지정할 수 있습니다.
+        제외금(힐비) 비율은 <b>군(1군/2군/3군)별로 개별 적용</b>됩니다. 아래에서 군을
+        선택한 뒤 비율을 조정하세요. 시즌별 분배 제외 대상도 지정할 수 있습니다.
       </p>
 
       <div className="mb-3">
         <GuildTabs guilds={guilds} guildId={guildId} onChange={setGuildId} />
       </div>
 
-      {/* 힐비 비율 */}
+      {/* 힐비 비율 (군별) */}
       <div className="mb-3 flex items-end gap-2">
         <label className="grid gap-1 text-xs text-neutral-500">
-          <span>제외 분배금 비율(%)</span>
+          <span>
+            {(() => {
+              const g = guilds.find((x) => x.id === guildId);
+              return g ? `${g.order}군 제외 분배금 비율(%)` : "제외 분배금 비율(%)";
+            })()}
+          </span>
           <input
             type="number"
             min={0}
