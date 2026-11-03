@@ -12,6 +12,11 @@ export interface GuildOpt {
   order: number;
   name: string;
 }
+export interface MemberOpt {
+  id: number;
+  name: string;
+  guildId: number | null;
+}
 
 interface Bidder {
   memberId: number;
@@ -34,10 +39,12 @@ interface ResultItem {
 export default function RequestClient({
   events,
   guilds,
+  members,
   isAdmin,
 }: {
   events: EventOpt[];
   guilds: GuildOpt[];
+  members: MemberOpt[];
   isAdmin: boolean;
 }) {
   const [eventId, setEventId] = useState<number | null>(
@@ -90,6 +97,50 @@ export default function RequestClient({
         )
       );
       flash(winnerId ? "낙찰 처리되었습니다." : "낙찰이 취소되었습니다.");
+    } catch (e) {
+      flash(e instanceof Error ? e.message : "오류");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // 관리자: 신청자 강제 추가
+  async function addBidder(eventItemId: number, memberId: number) {
+    if (!eventId || !memberId) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/events/${eventId}/bidders`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventItemId, memberId }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.message ?? "추가 실패");
+      await load();
+      const nm = members.find((m) => m.id === memberId)?.name;
+      flash(`${nm ?? "길드원"} 신청자로 추가되었습니다.`);
+    } catch (e) {
+      flash(e instanceof Error ? e.message : "오류");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // 관리자: 신청자 제거
+  async function removeBidder(eventItemId: number, memberId: number, name: string) {
+    if (!eventId) return;
+    if (!window.confirm(`${name} 신청을 제거할까요? (낙찰자였다면 낙찰도 해제됩니다)`))
+      return;
+    setBusy(true);
+    try {
+      const res = await fetch(
+        `/api/events/${eventId}/bidders?eventItemId=${eventItemId}&memberId=${memberId}`,
+        { method: "DELETE" }
+      );
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.message ?? "제거 실패");
+      await load();
+      flash(`${name} 신청이 제거되었습니다.`);
     } catch (e) {
       flash(e instanceof Error ? e.message : "오류");
     } finally {
@@ -272,17 +323,29 @@ export default function RequestClient({
                                 {Math.round(b.attendanceRate * 100)}%
                               </td>
                               <td className="px-3 py-1.5 text-right">
-                                {isWinner ? (
-                                  <span className="text-xs text-amber-600">낙찰됨</span>
-                                ) : isAdmin ? (
-                                  <button
-                                    onClick={() => award(it.eventItemId, b.memberId)}
-                                    disabled={busy}
-                                    className="rounded border border-neutral-200 px-2 py-1 text-xs text-neutral-600 hover:bg-amber-50 hover:text-amber-700"
-                                  >
-                                    낙찰
-                                  </button>
-                                ) : null}
+                                <span className="inline-flex items-center justify-end gap-1">
+                                  {isWinner ? (
+                                    <span className="text-xs text-amber-600">낙찰됨</span>
+                                  ) : isAdmin ? (
+                                    <button
+                                      onClick={() => award(it.eventItemId, b.memberId)}
+                                      disabled={busy}
+                                      className="rounded border border-neutral-200 px-2 py-1 text-xs text-neutral-600 hover:bg-amber-50 hover:text-amber-700"
+                                    >
+                                      낙찰
+                                    </button>
+                                  ) : null}
+                                  {isAdmin && (
+                                    <button
+                                      onClick={() => removeBidder(it.eventItemId, b.memberId, b.name)}
+                                      disabled={busy}
+                                      title="신청자 제거"
+                                      className="rounded border border-red-200 px-1.5 py-1 text-xs text-red-500 hover:bg-red-50"
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+                                </span>
                               </td>
                             </tr>
                           );
@@ -291,12 +354,66 @@ export default function RequestClient({
                     </table>
                   </div>
                 )}
+
+                {isAdmin && (
+                  <AddBidder
+                    candidates={members.filter(
+                      (m) =>
+                        !it.bidders.some((b) => b.memberId === m.id) &&
+                        (guildId === "all" || m.guildId === guildId)
+                    )}
+                    busy={busy}
+                    onAdd={(memberId) => addBidder(it.eventItemId, memberId)}
+                  />
+                )}
               </div>
             );
           })}
         </div>
       )}
     </section>
+  );
+}
+
+// 관리자 전용: 아이템에 신청자(길드원)를 직접 추가하는 컨트롤
+function AddBidder({
+  candidates,
+  busy,
+  onAdd,
+}: {
+  candidates: MemberOpt[];
+  busy: boolean;
+  onAdd: (memberId: number) => void;
+}) {
+  const [sel, setSel] = useState<number | "">("");
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-dashed border-neutral-200 pt-2">
+      <span className="text-xs font-medium text-neutral-500">신청자 강제 추가</span>
+      <select
+        value={sel}
+        onChange={(e) => setSel(e.target.value ? Number(e.target.value) : "")}
+        className="rounded border border-neutral-300 px-2 py-1 text-xs focus:border-sky-400 focus:outline-none"
+      >
+        <option value="">길드원 선택</option>
+        {candidates.map((m) => (
+          <option key={m.id} value={m.id}>
+            {m.name}
+          </option>
+        ))}
+      </select>
+      <button
+        onClick={() => {
+          if (sel) {
+            onAdd(Number(sel));
+            setSel("");
+          }
+        }}
+        disabled={busy || !sel}
+        className="rounded border border-sky-300 bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-700 hover:bg-sky-100 disabled:opacity-50"
+      >
+        + 추가
+      </button>
+    </div>
   );
 }
 
