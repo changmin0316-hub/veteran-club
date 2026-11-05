@@ -14,9 +14,11 @@ function handleAuth(e: unknown) {
 
 const patchSchema = z.object({
   memberIds: z.array(z.number().int().positive()),
+  categoryId: z.number().int().positive().optional(), // 카테고리 변경(선택)
 });
 
-// 세션 참석자 수정 → 누적 출석(AttendanceRecord) 재계산
+// 세션 참석자/카테고리 수정 → 누적 출석(AttendanceRecord) 재계산.
+// 기존 세션 기여분(옛 카테고리/옛 참석자)을 빼고 새 세션 기여분(새 카테고리/새 참석자)을 더한다.
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -48,45 +50,63 @@ export async function PATCH(
     );
   }
 
-  const { weekId, categoryId, plays } = session;
-  const oldIds = new Set(session.members.map((m) => m.memberId));
-  const newIds = new Set(parsed.data.memberIds);
-  const added = [...newIds].filter((x) => !oldIds.has(x));
-  const removed = [...oldIds].filter((x) => !newIds.has(x));
+  const { weekId, plays } = session;
+  const oldCategoryId = session.categoryId;
+  const newCategoryId = parsed.data.categoryId ?? oldCategoryId;
+
+  if (newCategoryId !== oldCategoryId) {
+    const cat = await prisma.attendanceCategory.findUnique({
+      where: { id: newCategoryId },
+    });
+    if (!cat) {
+      return NextResponse.json({ message: "카테고리를 찾을 수 없습니다." }, { status: 404 });
+    }
+  }
+
+  const oldMembers = session.members.map((m) => m.memberId);
+  const newMembers = parsed.data.memberIds;
 
   await prisma.$transaction([
-    // 추가: 누적 +plays
-    ...added.map((memberId) =>
-      prisma.attendanceRecord.upsert({
-        where: { weekId_memberId_categoryId: { weekId, memberId, categoryId } },
-        create: { weekId, memberId, categoryId, count: plays },
-        update: { count: { increment: plays } },
-      })
-    ),
-    // 제거: 누적 -plays
-    ...removed.map((memberId) =>
+    // 기존 기여분 제거: 옛 참석자 × 옛 카테고리 -plays
+    ...oldMembers.map((memberId) =>
       prisma.attendanceRecord.updateMany({
-        where: { weekId, memberId, categoryId },
+        where: { weekId, memberId, categoryId: oldCategoryId },
         data: { count: { decrement: plays } },
       })
     ),
-    // 세션 참석자 교체
+    // 새 기여분 추가: 새 참석자 × 새 카테고리 +plays
+    ...newMembers.map((memberId) =>
+      prisma.attendanceRecord.upsert({
+        where: { weekId_memberId_categoryId: { weekId, memberId, categoryId: newCategoryId } },
+        create: { weekId, memberId, categoryId: newCategoryId, count: plays },
+        update: { count: { increment: plays } },
+      })
+    ),
+    // 세션 자체 갱신(카테고리 + 참석자)
+    prisma.attendanceSession.update({
+      where: { id: sessionId },
+      data: { categoryId: newCategoryId },
+    }),
     prisma.attendanceSessionMember.deleteMany({ where: { sessionId } }),
-    ...parsed.data.memberIds.map((memberId) =>
+    ...newMembers.map((memberId) =>
       prisma.attendanceSessionMember.create({ data: { sessionId, memberId } })
     ),
   ]);
-  // 음수 보정
+
+  // 음수 보정(옛/새 카테고리 모두)
   await prisma.attendanceRecord.updateMany({
-    where: { weekId, categoryId, count: { lt: 0 } },
+    where: { weekId, categoryId: { in: [oldCategoryId, newCategoryId] }, count: { lt: 0 } },
     data: { count: 0 },
   });
 
+  const catChanged = newCategoryId !== oldCategoryId;
+  const added = newMembers.filter((x) => !oldMembers.includes(x)).length;
+  const removed = oldMembers.filter((x) => !newMembers.includes(x)).length;
   await logActivity({
     actorId: me.memberId,
     actorName: me.name,
     action: "출석 세션 수정",
-    detail: `세션 ${sessionId} · 추가 ${added.length} / 제거 ${removed.length}`,
+    detail: `세션 ${sessionId} · 추가 ${added} / 제거 ${removed}${catChanged ? ` · 카테고리 변경` : ""}`,
   });
 
   return NextResponse.json({ ok: true });

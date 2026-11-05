@@ -11,6 +11,10 @@ interface RosterMember {
   name: string;
   guildId: number | null;
 }
+interface Category {
+  id: number;
+  name: string;
+}
 interface Session {
   id: number;
   time: string;
@@ -37,9 +41,11 @@ export default function SessionManager({
 }) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [roster, setRoster] = useState<RosterMember[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [draft, setDraft] = useState<Set<number>>(new Set());
+  const [draftCat, setDraftCat] = useState<number | "">("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -54,6 +60,7 @@ export default function SessionManager({
       const d = await res.json();
       setSessions(d.sessions ?? []);
       setRoster(d.roster ?? []);
+      setCategories(d.categories ?? []);
     } catch {
       setSessions([]);
     } finally {
@@ -74,6 +81,7 @@ export default function SessionManager({
   function startEdit(s: Session) {
     setEditId(s.id);
     setDraft(new Set(s.members.map((m) => m.id)));
+    setDraftCat(s.categoryId);
   }
 
   function toggle(id: number) {
@@ -90,14 +98,17 @@ export default function SessionManager({
       const res = await fetch(`/api/attendance/sessions/${s.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ memberIds: [...draft] }),
+        body: JSON.stringify({
+          memberIds: [...draft],
+          categoryId: draftCat ? Number(draftCat) : undefined,
+        }),
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.message ?? "저장 실패");
       setEditId(null);
       await load();
       onChanged();
-      flash("참석자 수정 완료");
+      flash("출석 기록 수정 완료");
     } catch (e) {
       flash(e instanceof Error ? e.message : "오류");
     } finally {
@@ -187,6 +198,22 @@ export default function SessionManager({
 
             {editId === s.id ? (
               <div className="mt-3">
+                <label className="mb-3 flex items-center gap-2 text-xs text-neutral-500">
+                  <span className="font-medium">출석 카테고리</span>
+                  <select
+                    value={draftCat}
+                    onChange={(e) =>
+                      setDraftCat(e.target.value ? Number(e.target.value) : "")
+                    }
+                    className="rounded border border-neutral-300 px-2 py-1 text-xs focus:border-sky-400 focus:outline-none"
+                  >
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <div className="mb-2 text-xs text-neutral-500">
                   참석자 선택 ({draft.size}/{candidates(s).length})
                 </div>

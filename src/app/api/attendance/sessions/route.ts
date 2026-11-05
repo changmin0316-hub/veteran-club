@@ -34,6 +34,7 @@ export async function GET(req: NextRequest) {
   const memberName = new Map(members.map((m) => [m.id, m.name]));
 
   return NextResponse.json({
+    categories: categories.map((c) => ({ id: c.id, name: c.name })),
     roster: members
       .map((m) => ({ id: m.id, name: m.name, guildId: m.guildId }))
       .sort((a, b) => a.name.localeCompare(b.name)),
