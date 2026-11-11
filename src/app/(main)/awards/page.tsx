@@ -44,8 +44,11 @@ export default async function AwardsPage() {
   ]);
 
   // 주차별 분배금 집계 (길드원별 합계)
+  // 분배금 정산(다이아)·제외비율은 군(1/2/3군)별로 개별 적용되므로,
+  // 정산 페이지와 동일하게 (주차 × 군) 단위로 계산해 합산한다.
+  const pairs = weeks.flatMap((w) => guilds.map((g) => ({ w, g })));
   const settlements = await Promise.all(
-    weeks.map((w) => computeSettlement(w.id))
+    pairs.map(({ w, g }) => computeSettlement(w.id, g.id))
   );
   const payMap = new Map<
     number,
@@ -56,7 +59,7 @@ export default async function AwardsPage() {
       weeks: { label: string; share: number }[];
     }
   >();
-  weeks.forEach((w, i) => {
+  pairs.forEach(({ w }, i) => {
     const res = settlements[i];
     if (!res) return;
     const label = w.name ?? `${w.number}주차`;
