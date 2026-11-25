@@ -18,3 +18,7 @@ next-env.d.ts
 
 # tesseract 언어데이터(런타임 자동 다운로드)
 *.traineddata
+
+# env 백업/보관 파일(비밀값) — 절대 커밋 금지
+.env*.save
+.env.production.local.save
